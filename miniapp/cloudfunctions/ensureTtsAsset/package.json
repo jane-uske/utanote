@@ -1,0 +1,9 @@
+{
+  "name": "ensure-tts-asset",
+  "version": "1.0.0",
+  "description": "Ensure a TTS audio asset exists with global caching and quota management",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

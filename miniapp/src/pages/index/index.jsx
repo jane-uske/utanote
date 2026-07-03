@@ -197,6 +197,9 @@ export default function Index() {
                     <View onClick={v.togglePlay} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: v.playIconColor, background: 'var(--ink-05)', border: '1px solid var(--ink-08)', borderRadius: 16, padding: '4px 9px' })}>
                       <Text>🔊</Text><Text>{v.playLabel}</Text>
                     </View>
+                    <View onClick={v.toggleSlow} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: v.slowColor, background: 'var(--ink-05)', border: '1px solid var(--ink-08)', borderRadius: 16, padding: '4px 9px' })}>
+                      <Text>🐢</Text><Text>{v.slowLabel}</Text>
+                    </View>
                   </View>
                   <Text style={sx({ fontSize: 21, lineHeight: 1.6, color: 'var(--text-heading)', fontWeight: 600 })}>
                     <Text>{v.currentSplit.pre}</Text>
@@ -440,8 +443,8 @@ export default function Index() {
               </View>
 
               <View style={sx({ borderRadius: 13, background: 'var(--ink-04)', border: '1px solid var(--ink-06)', overflow: 'hidden' })}>
-                <View style={sx({ padding: '12px 14px', borderBottom: '1px solid var(--ink-06)', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>开发者</View><View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>jane-uske</View></View>
-                <View style={sx({ padding: '12px 14px', borderBottom: '1px solid var(--ink-06)', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>开源地址</View><View style={sx({ fontSize: 12.5, color: 'var(--accent-light)' })}>github.com/jane-uske/utanote</View></View>
+                <View style={sx({ padding: '12px 14px', borderBottom: '1px solid var(--ink-06)', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>开发者</View><View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>rare</View></View>
+                <View style={sx({ padding: '12px 14px', borderBottom: '1px solid var(--ink-06)', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>TTS 引擎</View><View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>VOICEVOX</View></View>
                 <View style={sx({ padding: '12px 14px', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>AI 引擎</View><View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>DeepSeek</View></View>
               </View>
 
@@ -450,9 +453,9 @@ export default function Index() {
                 <View style={sx({ display: 'flex', flexDirection: 'column', gap: 8 })}>
                   {[
                     { icon: '🎤', text: 'AI 评分带唱 & 教唱模式' },
-                    { icon: '🔊', text: 'TTS 语音朗读（单词 & 例句）' },
                     { icon: '🎯', text: '每日学习目标与打卡' },
                     { icon: '📊', text: '学习数据统计与进度追踪' },
+                    { icon: '🃏', text: '间隔重复记忆曲线复习' },
                     { icon: '👥', text: '分享成就卡片给好友' },
                   ].map((item) => (
                     <View key={item.text} style={sx({ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'var(--ink-03)', border: '1px solid var(--ink-06)' })}>
@@ -485,6 +488,7 @@ export default function Index() {
           </View>
 
           <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 })}>
+            <View onClick={v.toggleSlow} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 11, color: v.slowColor, background: 'var(--ink-05)', border: '1px solid var(--ink-08)', borderRadius: 16, padding: '6px 14px' })}>🐢 {v.slowLabel}</View>
             <View style={sx({ fontSize: 12, color: v.currentMasteryColor, background: 'var(--ink-04)', padding: '5px 12px', borderRadius: 16, border: `1px solid ${v.currentMasteryBorder}` })}>{v.currentMasteryLabel}</View>
             {v.currentMastery !== 'mastered' && (
               <View onClick={v.markAsMastered} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 12, color: 'var(--success)', background: 'rgba(142,214,168,0.1)', padding: '5px 14px', borderRadius: 16, border: '1px solid rgba(142,214,168,0.3)' })}>标记已掌握 ✓</View>
@@ -507,7 +511,7 @@ export default function Index() {
 
       {/* ============ LOADING OVERLAY ============ */}
       {v.parsing && (
-        <View style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
+        <View style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
           <View style={sx({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '0 32px' })}>
             <View style={sx({ width: 44, height: 44, border: '3px solid var(--ink-15)', borderTopColor: 'var(--accent-light)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
             <View style={sx({ fontSize: 15, color: 'var(--text-body)', fontWeight: 600 })}>{v.parseStage || 'AI 正在解析歌词…'}</View>
@@ -528,7 +532,7 @@ export default function Index() {
 
       {/* ============ WORD MODAL ============ */}
       {v.showModal && (
-        <View onClick={v.closeWordModal} className={'modal-mask' + (v.modalClosing ? ' closing' : '')} style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40, display: 'flex', alignItems: 'flex-end' })}>
+        <View onClick={v.closeWordModal} className={'modal-mask' + (v.modalClosing ? ' closing' : '')} style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', zIndex: 40, display: 'flex', alignItems: 'flex-end' })}>
           <ScrollView scrollY catchMove onClick={(e) => e.stopPropagation()} className={'modal-sheet' + (v.modalClosing ? ' closing' : '')} style={sx({ width: '100%', maxHeight: '78%', background: 'var(--surface-sheet)', borderRadius: '22px 22px 0 0', border: '1px solid var(--ink-08)', borderBottom: 'none' })}>
             <View style={sx({ padding: '14px 20px 26px', display: 'flex', flexDirection: 'column', gap: 14 })}>
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
