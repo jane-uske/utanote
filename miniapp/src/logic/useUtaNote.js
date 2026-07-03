@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
+import Taro from '@tarojs/taro'
 import { sampleLyrics } from '../data'
-import { loadSongs, addSong } from './library'
-import { loadSettings, saveSettings, hasApiKey } from './settings'
+import { loadSongs, addSong, deleteSong, loadMastery, getMastery, setMastery } from './library'
 import { parseLyrics } from './parse'
+import { initFontScale, getFontScale, setFontScale as _setFontScale } from './sx'
 
 // UtaNote logic layer — identical shape to the web app's hook, but parsing goes
 // through the `parse` cloud function and persistence uses Taro storage.
@@ -18,9 +19,30 @@ function splitSentence(s) {
   }
 }
 
-const MASTERY_BY_STATUS = { 新学: 'learning', 待学习: 'new' }
 const MASTERY_LABEL = { mastered: '已掌握', learning: '学习中', new: '未学习' }
 const MASTERY_COLOR = { mastered: '#8ed6a8', learning: '#e8c468', new: 'rgba(255,255,255,0.4)' }
+
+const FONT_SCALE_OPTIONS = [
+  { key: 0.9, label: '小' },
+  { key: 1, label: '标准' },
+  { key: 1.15, label: '大' },
+  { key: 1.3, label: '超大' },
+]
+
+// Initialize font scale from storage before first render.
+initFontScale()
+
+const FAV_KEY = 'utanote.favorites'
+
+function loadFavorites() {
+  try {
+    const raw = Taro.getStorageSync(FAV_KEY)
+    return raw && typeof raw === 'object' ? raw : {}
+  } catch { return {} }
+}
+function persistFavorites(fav) {
+  try { Taro.setStorageSync(FAV_KEY, fav) } catch { /* ignore */ }
+}
 
 export function useUtaNote() {
   const [activeTab, setActiveTab] = useState('home')
@@ -29,22 +51,25 @@ export function useUtaNote() {
   const [showModal, setShowModal] = useState(false)
   const [modalDetail, setModalDetail] = useState(null)
   const [romajiOpen, setRomajiOpen] = useState(false)
-  const [favorites, setFavorites] = useState({})
+  const [favorites, setFavorites] = useState(() => loadFavorites())
   const [lyricsText, setLyricsText] = useState('')
+  const [songTitle, setSongTitle] = useState('')
   const [playingId, setPlayingId] = useState(null)
   const [libraryFilter, setLibraryFilter] = useState('all')
   const [librarySearch, setLibrarySearch] = useState('')
 
   const [songs, setSongs] = useState(() => loadSongs())
   const [activeSongId, setActiveSongId] = useState(() => loadSongs()[0] && loadSongs()[0].id)
+  const [masteryMap, setMasteryMap] = useState(() => loadMastery())
+  const [fontScale, setFontScaleState] = useState(() => getFontScale())
 
-  const [settings, setSettings] = useState(() => loadSettings())
-  const [settingsDraft, setSettingsDraft] = useState(() => loadSettings())
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [parsing, setParsing] = useState(false)
+  const [parseStage, setParseStage] = useState('')
+  const [parseElapsed, setParseElapsed] = useState(0)
   const [parseError, setParseError] = useState('')
   const [parseNotice, setParseNotice] = useState('')
   const playRef = useRef(null)
+  const parseTimerRef = useRef(null)
 
   const activeSong = songs.find((s) => s.id === activeSongId) || songs[0]
   const sentences = activeSong ? activeSong.sentences : []
@@ -58,6 +83,14 @@ export function useUtaNote() {
   const openCard = (i) => {
     setActiveTab('study'); setStudyPhase('card'); setCardIndex(i)
     setRomajiOpen(false); setShowModal(false)
+    // Auto-promote "new" → "learning" when the card is first viewed.
+    if (activeSongId && getMastery(masteryMap, activeSongId, i) === 'new') {
+      setMasteryMap((m) => setMastery(m, activeSongId, i, 'learning'))
+    }
+  }
+  const markAsMastered = (i) => {
+    if (!activeSongId) return
+    setMasteryMap((m) => setMastery(m, activeSongId, i, 'mastered'))
   }
   const startPractice = () => openCard(0)
   const backToTasks = () => setStudyPhase('tasks')
@@ -74,7 +107,11 @@ export function useUtaNote() {
   const toggleFavorite = () => {
     const word = modalDetail && modalDetail.word
     if (!word) return
-    setFavorites((f) => ({ ...f, [word]: !f[word] }))
+    setFavorites((f) => {
+      const next = { ...f, [word]: !f[word] }
+      persistFavorites(next)
+      return next
+    })
   }
   const togglePlay = () => {
     const id = 'x' + Math.random()
@@ -86,39 +123,69 @@ export function useUtaNote() {
     setActiveSongId(id); setCardIndex(0); setActiveTab('study'); setStudyPhase('tasks')
   }
 
+  const removeSong = (id) => {
+    Taro.showModal({
+      title: '确认删除',
+      content: '删除后歌曲和学习记录将无法恢复',
+      confirmColor: '#e05050',
+      success: (res) => {
+        if (res.confirm) {
+          const next = deleteSong(id)
+          setSongs(next)
+          if (activeSongId === id) {
+            setActiveSongId(next[0] ? next[0].id : null)
+            setActiveTab('home')
+          }
+        }
+      },
+    })
+  }
+
   const startBreakdown = async () => {
     if (parsing) return
     setParseError(''); setParseNotice(''); setParsing(true)
+    setParseStage('正在连接云函数…'); setParseElapsed(0)
+
+    // Elapsed‐time ticker — counts up each second so the user sees movement.
+    const t0 = Date.now()
+    parseTimerRef.current = setInterval(() => {
+      setParseElapsed(Math.floor((Date.now() - t0) / 1000))
+    }, 1000)
+
     try {
-      const r = await parseLyrics(lyricsText, settings)
-      const { song, songs: next } = addSong({ lyrics: lyricsText, sentences: r.sentences })
+      const lineCount = (lyricsText || '').split(/\r?\n/).filter((l) => l.trim()).length
+      setParseStage(`正在解析 ${lineCount} 行歌词…`)
+      const r = await parseLyrics(lyricsText)
+      setParseStage('解析完成，正在生成卡片…')
+      const { song, songs: next } = addSong({ lyrics: lyricsText, sentences: r.sentences, title: songTitle.trim() || undefined })
       setSongs(next); setActiveSongId(song.id); setCardIndex(0)
       setActiveTab('study'); setStudyPhase('tasks')
+      setSongTitle('')
       if (r.warning) setParseNotice(r.warning)
       else if (r.source === 'local') setParseNotice('未配置 AI 解析，已生成本地分词草稿（读音/释义为占位）。在云函数配置 DEEPSEEK_KEY 后可自动生成完整内容。')
       else if (r.truncated) setParseNotice('歌词较长，本次仅解析了前 40 行。')
     } catch (e) {
       setParseError(e.message || '解析失败，请重试。')
     } finally {
-      setParsing(false)
+      clearInterval(parseTimerRef.current)
+      setParsing(false); setParseStage(''); setParseElapsed(0)
     }
   }
   const dismissParseError = () => setParseError('')
   const dismissParseNotice = () => setParseNotice('')
 
-  const openSettings = () => { setSettingsDraft({ ...settings }); setSettingsOpen(true) }
-  const closeSettings = () => setSettingsOpen(false)
-  const updateSettingsDraft = (patch) => setSettingsDraft((d) => ({ ...d, ...patch }))
-  const saveSettingsAction = () => { const clean = saveSettings(settingsDraft); setSettings(clean); setSettingsOpen(false) }
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const openAbout = () => setAboutOpen(true)
+  const closeAbout = () => setAboutOpen(false)
 
-  const isHome = activeTab === 'home' && !settingsOpen
-  const isTasks = activeTab === 'study' && studyPhase === 'tasks' && !settingsOpen
-  const isCard = activeTab === 'study' && studyPhase === 'card' && !settingsOpen
-  const isSummary = activeTab === 'study' && studyPhase === 'summary' && !settingsOpen
-  const isLibrary = activeTab === 'library' && !settingsOpen
-  const isMe = activeTab === 'me' && !settingsOpen
-  const isSettings = settingsOpen
-  const showTabBar = !isCard && !isSettings
+  const isHome = activeTab === 'home' && !aboutOpen
+  const isTasks = activeTab === 'study' && studyPhase === 'tasks' && !aboutOpen
+  const isCard = activeTab === 'study' && studyPhase === 'card' && !aboutOpen
+  const isSummary = activeTab === 'study' && studyPhase === 'summary' && !aboutOpen
+  const isLibrary = activeTab === 'library' && !aboutOpen
+  const isMe = activeTab === 'me' && !aboutOpen
+  const isAbout = aboutOpen
+  const showTabBar = !isCard && !isAbout
 
   const playGlyph = playingId ? '❚❚' : '▶'
   const playIconColor = playingId ? '#a5a8ec' : 'rgba(255,255,255,0.5)'
@@ -130,8 +197,8 @@ export function useUtaNote() {
     { key: 'me', label: '我的', icon: '◯' },
   ].map((t) => ({
     ...t,
-    color: activeTab === t.key && !settingsOpen ? '#a5a8ec' : 'rgba(255,255,255,0.4)',
-    onClick: () => { setSettingsOpen(false); setTab(t.key) },
+    color: activeTab === t.key && !aboutOpen ? '#a5a8ec' : 'rgba(255,255,255,0.4)',
+    onClick: () => { setAboutOpen(false); setTab(t.key) },
   }))
 
   const taskRows = sentences.map((row, i) => ({
@@ -157,8 +224,7 @@ export function useUtaNote() {
   ]
 
   const vocabAll = sentences.map((row, i) => {
-    let mastery = MASTERY_BY_STATUS[row.status] || 'new'
-    if (i === 0) mastery = 'mastered'
+    const mastery = activeSongId ? getMastery(masteryMap, activeSongId, i) : 'new'
     return {
       word: row.detail.word, kana: row.detail.kana, meaning: row.detail.meaning,
       pos: row.detail.pos, song: activeSong ? activeSong.title : '', mastery, detail: row.detail,
@@ -166,7 +232,7 @@ export function useUtaNote() {
   })
   const q = librarySearch.trim()
   const filteredVocab = vocabAll
-    .filter((v) => libraryFilter === 'all' || v.mastery === libraryFilter)
+    .filter((v) => libraryFilter === 'all' ? true : libraryFilter === 'favorites' ? !!favorites[v.word] : v.mastery === libraryFilter)
     .filter((v) => !q || v.word.includes(q) || (v.meaning || '').includes(q) || (v.kana || '').includes(q))
     .map((v, i) => ({
       ...v,
@@ -177,6 +243,7 @@ export function useUtaNote() {
     }))
   const libraryFilterChips = [
     { key: 'all', label: '全部' },
+    { key: 'favorites', label: '★ 收藏' },
     { key: 'mastered', label: '已掌握' },
     { key: 'learning', label: '学习中' },
     { key: 'new', label: '未学习' },
@@ -210,19 +277,37 @@ export function useUtaNote() {
     weight: tok.type === 'particle' ? 400 : 600,
   }))
 
-  const mySongs = songs.map((s) => ({
-    key: s.id,
-    title: s.title,
-    subtitle: `共 ${s.sentences.length} 句${s.demo ? ' · 示例' : ''}`,
-    onClick: () => openSongTasks(s.id),
-  }))
+  const AVATAR_HUES = [260, 210, 180, 340, 30, 150, 290, 50, 120, 320]
+  const mySongs = songs.map((s, i) => {
+    const char = (s.title || '歌')[0]
+    const hue = AVATAR_HUES[i % AVATAR_HUES.length]
+    return {
+      key: s.id,
+      title: s.title,
+      subtitle: `共 ${s.sentences.length} 句${s.demo ? ' · 示例' : ''}`,
+      demo: !!s.demo,
+      avatarChar: char,
+      avatarBg: `linear-gradient(135deg, hsl(${hue}, 45%, 38%), hsl(${hue}, 35%, 22%))`,
+      onClick: () => openSongTasks(s.id),
+      onDelete: s.demo ? null : () => removeSong(s.id),
+    }
+  })
+
+  const currentMastery = activeSongId ? getMastery(masteryMap, activeSongId, safeIndex) : 'new'
+
+  const setFontScaleAction = (scale) => {
+    _setFontScale(scale)
+    setFontScaleState(scale)
+  }
+  const fontScaleLabel = (FONT_SCALE_OPTIONS.find((o) => o.key === fontScale) || FONT_SCALE_OPTIONS[1]).label
 
   return {
-    isHome, isTasks, isCard, isSummary, isLibrary, isMe, isSettings, showTabBar, showModal,
+    isHome, isTasks, isCard, isSummary, isLibrary, isMe, isAbout, showTabBar, showModal,
     lyricsText, lyricsCount: lyricsText.length, setLyrics, fillSample, startBreakdown,
-    parsing, parseError, parseNotice, dismissParseError, dismissParseNotice, hasApiKey: hasApiKey(settings),
+    songTitle, setSongTitle,
+    parsing, parseStage, parseElapsed, parseError, parseNotice, dismissParseError, dismissParseNotice,
     tabs,
-    songTitle: activeSong ? activeSong.title : '', sentenceCount: total, taskRows, startPractice,
+    activeSongTitle: activeSong ? activeSong.title : '', sentenceCount: total, taskRows, startPractice,
     currentSentence: current || {},
     currentSplit: current ? splitSentence(current) : { pre: '', word: '', post: '' },
     tokenViews,
@@ -237,11 +322,16 @@ export function useUtaNote() {
     togglePlay, playGlyph, playIconColor,
     weekDays, summaryStats, goHome,
     librarySearch, setSearch, libraryFilterChips, libraryStats, filteredVocab,
-    mySongs, importedCount: songs.filter((s) => !s.demo).length, openSettings,
-    settingsDraft, updateSettingsDraft, saveSettingsAction, closeSettings,
+    mySongs, importedCount: songs.filter((s) => !s.demo).length,
     currentDetail: detail,
     favoriteGlyph: isFav ? '★' : '☆',
     favoriteColor: isFav ? '#e8c468' : 'rgba(255,255,255,0.4)',
     toggleFavorite, closeWordModal,
+    currentMastery,
+    currentMasteryLabel: MASTERY_LABEL[currentMastery],
+    currentMasteryColor: MASTERY_COLOR[currentMastery],
+    markAsMastered: () => markAsMastered(safeIndex),
+    fontScale, fontScaleLabel, fontScaleOptions: FONT_SCALE_OPTIONS, setFontScaleAction,
+    openAbout, closeAbout,
   }
 }

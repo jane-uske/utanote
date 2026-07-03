@@ -53,3 +53,39 @@ export function addSong({ lyrics, sentences, title }) {
   persist([song, ...imported])
   return { song, songs: loadSongs() }
 }
+
+export function deleteSong(id) {
+  const remaining = loadSongs().filter((s) => !s.demo && s.id !== id)
+  persist(remaining)
+  return loadSongs()
+}
+
+// ── Mastery tracking ────────────────────────────────────────────
+// Storage shape: { "songId:index": "new" | "learning" | "mastered" }
+
+const MASTERY_KEY = 'utanote.mastery'
+
+export function loadMastery() {
+  try {
+    const raw = Taro.getStorageSync(MASTERY_KEY)
+    return raw && typeof raw === 'object' ? raw : {}
+  } catch { return {} }
+}
+
+function persistMastery(map) {
+  try { Taro.setStorageSync(MASTERY_KEY, map) } catch { /* ignore */ }
+}
+
+function masteryKey(songId, index) {
+  return songId + ':' + index
+}
+
+export function getMastery(map, songId, index) {
+  return map[masteryKey(songId, index)] || 'new'
+}
+
+export function setMastery(map, songId, index, level) {
+  const next = { ...map, [masteryKey(songId, index)]: level }
+  persistMastery(next)
+  return next
+}

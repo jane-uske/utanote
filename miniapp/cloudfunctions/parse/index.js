@@ -14,10 +14,22 @@
 // Set the key: cloud console → this function → 环境变量 → DEEPSEEK_KEY.
 
 const wanakana = require('wanakana')
+const https = require('https')
+const http = require('http')
+const { URL } = require('url')
+const cloud = require('wx-server-sdk')
+
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const db = cloud.database()
+const _ = db.command
+
+const DAILY_LIMIT = 20
 
 const DEFAULT_BASE = 'https://api.deepseek.com'
 const DEFAULT_MODEL = 'deepseek-chat'
 const MAX_LINES = 40
+const CHUNK_SIZE = 5   // lines per LLM batch — keeps output tokens small
+const HTTP_TIMEOUT = 45000 // ms — leave headroom for cold-start + merge
 
 const PARTICLES = new Set([
   'が', 'を', 'に', 'は', 'へ', 'で', 'と', 'も', 'の', 'や', 'か',
@@ -176,34 +188,95 @@ function extractJSON(text) {
   return JSON.parse(t)
 }
 
+function httpRequest(urlStr, options, body) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(urlStr)
+    const mod = parsed.protocol === 'https:' ? https : http
+    const req = mod.request(parsed, options, (res) => {
+      const chunks = []
+      res.on('data', (chunk) => chunks.push(chunk))
+      res.on('end', () => {
+        const raw = Buffer.concat(chunks).toString('utf8')
+        resolve({ statusCode: res.statusCode, body: raw })
+      })
+    })
+    req.on('error', reject)
+    req.setTimeout(HTTP_TIMEOUT, () => { req.destroy(new Error('LLM request timeout')) })
+    if (body) req.write(body)
+    req.end()
+  })
+}
+
 async function callLLM({ baseURL, apiKey, model, lines }) {
   const url = baseURL.replace(/\/+$/, '') + '/chat/completions'
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: buildUserPrompt(lines) },
-      ],
-    }),
+  const payload = JSON.stringify({
+    model,
+    temperature: 0.2,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: buildUserPrompt(lines) },
+    ],
   })
-  if (!res.ok) {
-    let detail = ''
-    try {
-      detail = (await res.text()).slice(0, 300)
-    } catch {
-      /* ignore */
-    }
-    throw new Error(`LLM ${res.status}${detail ? ': ' + detail : ''}`)
+  const res = await httpRequest(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Length': Buffer.byteLength(payload),
+    },
+  }, payload)
+  if (res.statusCode < 200 || res.statusCode >= 300) {
+    throw new Error(`LLM ${res.statusCode}: ${(res.body || '').slice(0, 300)}`)
   }
-  const data = await res.json()
+  const data = JSON.parse(res.body)
   const content = data && data.choices && data.choices[0] && data.choices[0].message.content
+  const usage = (data && data.usage) || {}
   const out = extractJSON(content)
-  return Array.isArray(out && out.sentences) ? out.sentences : []
+  return {
+    sentences: Array.isArray(out && out.sentences) ? out.sentences : [],
+    usage: {
+      prompt_tokens: usage.prompt_tokens || 0,
+      completion_tokens: usage.completion_tokens || 0,
+      total_tokens: usage.total_tokens || 0,
+    },
+  }
+}
+
+// Split an array into chunks of at most `size` elements.
+function chunk(arr, size) {
+  const out = []
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+  return out
+}
+
+// Call LLM in parallel batches; each batch covers CHUNK_SIZE lines.
+// Returns { enriched: Array, warnings: string[] }.
+// - enriched[i] is the LLM result for line i, or null if its batch failed.
+// - Successful batches are kept even when others fail (partial enrichment).
+async function callLLMChunked({ baseURL, apiKey, model, lines }) {
+  const chunks = chunk(lines, CHUNK_SIZE)
+  const results = await Promise.allSettled(
+    chunks.map((ch) => callLLM({ baseURL, apiKey, model, lines: ch }))
+  )
+  const enriched = []
+  const warnings = []
+  const totalUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+  for (let ci = 0; ci < results.length; ci++) {
+    const r = results[ci]
+    if (r.status === 'fulfilled') {
+      enriched.push(...(r.value.sentences || []))
+      totalUsage.prompt_tokens += r.value.usage.prompt_tokens
+      totalUsage.completion_tokens += r.value.usage.completion_tokens
+      totalUsage.total_tokens += r.value.usage.total_tokens
+    } else {
+      // Fill this chunk's slots with nulls so indices stay aligned.
+      const errMsg = (r.reason && r.reason.message) || String(r.reason)
+      warnings.push(`批次 ${ci + 1}/${chunks.length} 失败: ${errMsg}`)
+      for (let j = 0; j < chunks[ci].length; j++) enriched.push(null)
+    }
+  }
+  return { enriched, warnings, usage: totalUsage }
 }
 
 // Cloud function entry.
@@ -211,37 +284,72 @@ async function callLLM({ baseURL, apiKey, model, lines }) {
 // The key normally comes from process.env.DEEPSEEK_KEY; event.apiKey is a
 // BYO-key escape hatch if you'd rather let the user supply their own.
 exports.main = async (event = {}) => {
+  const startTime = Date.now()
+  const { OPENID } = cloud.getWXContext()
+
+  // ── Rate limiting ──────────────────────────────────────────────
+  if (OPENID) {
+    try {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const { total } = await db.collection('parse_logs')
+        .where({ openid: OPENID, createdAt: _.gte(today) })
+        .count()
+      if (total >= DAILY_LIMIT) {
+        return { ok: false, error: `今日解析次数已达上限（${DAILY_LIMIT}次/天），明天再来吧~` }
+      }
+    } catch (e) {
+      console.warn('rate limit check failed:', e)
+      // Don't block if the db check fails
+    }
+  }
+
+  // ── Parse ──────────────────────────────────────────────────────
   const lyrics = event.lyrics || ''
-  const apiKey = (event.apiKey || process.env.DEEPSEEK_KEY || '').trim()
-  const baseURL = (event.baseURL || process.env.DEEPSEEK_BASE || DEFAULT_BASE).trim()
-  const model = (event.model || process.env.DEEPSEEK_MODEL || DEFAULT_MODEL).trim()
+  const apiKey = (process.env.DEEPSEEK_KEY || '').trim()
+  const baseURL = (process.env.DEEPSEEK_BASE || DEFAULT_BASE).trim()
+  const model = (process.env.DEEPSEEK_MODEL || DEFAULT_MODEL).trim()
 
   const all = splitLines(lyrics)
   if (all.length === 0) return { ok: false, error: '没有可解析的歌词。' }
   const truncated = all.length > MAX_LINES
   const lines = all.slice(0, MAX_LINES)
 
-  // No key → local-only draft (segmentation works; semantics are placeholders).
+  let source = 'local'
+  let tokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+  let warning
+
   if (!apiKey) {
-    return { ok: true, source: 'local', truncated, sentences: lines.map((l, i) => buildSentence(l, i, null)) }
+    // No key → local-only draft
+    const sentences = lines.map((l, i) => buildSentence(l, i, null))
+    return { ok: true, source, truncated, sentences }
   }
 
-  try {
-    const enriched = await callLLM({ baseURL, apiKey, model, lines })
-    return {
-      ok: true,
-      source: 'llm',
-      truncated,
-      sentences: lines.map((l, i) => buildSentence(l, i, enriched[i])),
-    }
-  } catch (e) {
-    // Degrade to the local draft and report why, rather than failing hard.
-    return {
-      ok: true,
-      source: 'local',
-      truncated,
-      warning: 'AI 解析失败，已降级为本地草稿：' + (e.message || e),
-      sentences: lines.map((l, i) => buildSentence(l, i, null)),
+  const { enriched, warnings, usage } = await callLLMChunked({ baseURL, apiKey, model, lines })
+  tokenUsage = usage
+  const allNull = enriched.every((e) => e == null)
+  source = allNull ? 'local' : warnings.length ? 'partial' : 'llm'
+  warning = warnings.length ? 'AI 部分解析失败，已对失败行降级为本地草稿：' + warnings.join('；') : undefined
+
+  const sentences = lines.map((l, i) => buildSentence(l, i, enriched[i]))
+
+  // ── Log to cloud database ─────────────────────────────────────
+  if (OPENID) {
+    try {
+      await db.collection('parse_logs').add({
+        data: {
+          openid: OPENID,
+          lineCount: lines.length,
+          source,
+          tokenUsage,
+          duration: Date.now() - startTime,
+          createdAt: db.serverDate(),
+        },
+      })
+    } catch (e) {
+      console.warn('log write failed:', e)
     }
   }
+
+  return { ok: true, source, truncated, warning, sentences }
 }

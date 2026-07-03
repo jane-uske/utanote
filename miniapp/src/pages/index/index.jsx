@@ -20,8 +20,8 @@ const noticeBanner = {
 }
 const fieldLabel = { fontSize: 11.5, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }
 const fieldInput = {
-  width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 10, padding: '10px 12px', fontSize: 13, color: '#eceaf3',
+  width: '100%', height: 42, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 10, padding: '0 12px', fontSize: 13, color: '#eceaf3',
 }
 const PLACEHOLDER = 'color: rgba(255,255,255,0.3)'
 
@@ -33,17 +33,17 @@ export default function Index() {
       style={sx({
         height: '100vh', display: 'flex', flexDirection: 'column',
         background: '#0d1120', color: '#f2f2f6', position: 'relative', overflow: 'hidden',
-        fontFamily: 'PingFang SC, sans-serif',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
       })}
     >
       <ScrollView scrollY style={sx({ flex: 1, minHeight: 0 })}>
-        <View style={sx({ paddingTop: 44, paddingBottom: 8 })}>
+        <View style={sx({ paddingTop: 88, paddingBottom: 8 })}>
 
           {/* ============ HOME ============ */}
           {v.isHome && (
-            <View style={sx({ padding: '4px 22px 28px', display: 'flex', flexDirection: 'column', gap: 20 })}>
+            <View style={sx({ padding: '4px 22px 28px', display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' })}>
               <View>
-                <Text style={sx({ fontFamily: 'Songti SC, serif', fontSize: 30, color: '#f5f4fa', letterSpacing: '0.5px' })}>UtaNote</Text>
+                <Text style={sx({ fontFamily: '"Noto Serif SC", "Songti SC", "STSong", Georgia, serif', fontSize: 30, color: '#f5f4fa', letterSpacing: 1, fontWeight: 600 })}>UtaNote</Text>
                 <View style={sx({ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 4 })}>把一首日语歌拆成可学会的每一句</View>
               </View>
 
@@ -52,13 +52,21 @@ export default function Index() {
                   <Text style={sx({ fontSize: 15, fontWeight: 600, color: '#f0f0f5' })}>导入歌词</Text>
                   <Text onClick={v.fillSample} style={sx({ fontSize: 12.5, color: 'rgba(255,255,255,0.5)' })}>示例歌词</Text>
                 </View>
+                <Input
+                  value={v.songTitle}
+                  onInput={(e) => v.setSongTitle(e.detail.value)}
+                  placeholder="输入歌曲名称（可选，默认取首行歌词）"
+                  placeholderStyle={PLACEHOLDER}
+                  style={sx({ width: '100%', height: 42, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '0 14px', fontSize: 13.5, color: '#eceaf3', marginBottom: 10 })}
+                />
                 <View style={sx({ position: 'relative' })}>
                   <Textarea
                     value={v.lyricsText}
                     onInput={(e) => v.setLyrics(e.detail.value)}
+                    maxlength={-1}
                     placeholder="粘贴或输入日文歌词（支持假名/汉字）"
                     placeholderStyle={PLACEHOLDER}
-                    style={sx({ width: '100%', height: 150, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 14, fontSize: 13.5, color: '#eceaf3' })}
+                    style={sx({ width: '100%', height: 150, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 14, fontSize: 13.5, color: '#eceaf3' })}
                   />
                   <View style={sx({ position: 'absolute', right: 12, bottom: 10, fontSize: 11, color: 'rgba(255,255,255,0.3)' })}>{v.lyricsCount} / 5000</View>
                 </View>
@@ -88,12 +96,12 @@ export default function Index() {
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                 <View>
                   <Text style={sx({ fontSize: 22, fontWeight: 700, color: '#f5f4fa' })}>今日任务</Text>
-                  <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 3 })}>《{v.songTitle}》</View>
+                  <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 3 })}>《{v.activeSongTitle}》</View>
                 </View>
-                <View style={sx({ width: 58, height: 58, borderRadius: '50%', border: '4px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 })}>
-                  <View style={sx({ position: 'absolute', top: -4, left: -4, right: -4, bottom: -4, borderRadius: '50%', border: '4px solid transparent', borderTopColor: '#8489e0', borderRightColor: '#8489e0', transform: 'rotate(45deg)' })} />
+                <View style={sx({ width: 42, height: 42, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 })}>
+                  <View style={sx({ position: 'absolute', top: -3, left: -3, right: -3, bottom: -3, borderRadius: '50%', border: '3px solid transparent', borderTopColor: '#8489e0', borderRightColor: '#8489e0', transform: 'rotate(45deg)' })} />
                   <View style={sx({ textAlign: 'center' })}>
-                    <View style={sx({ fontSize: 15, fontWeight: 700, color: '#f0f0f5' })}>{v.sentenceCount}</View>
+                    <View style={sx({ fontSize: 13, fontWeight: 700, color: '#f0f0f5' })}>{v.sentenceCount}</View>
                     <View style={sx({ fontSize: 8, color: 'rgba(255,255,255,0.4)' })}>句</View>
                   </View>
                 </View>
@@ -118,7 +126,7 @@ export default function Index() {
           {v.isCard && (
             <View style={sx({ padding: '2px 22px 20px', display: 'flex', flexDirection: 'column', gap: 18 })}>
               <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                <View onClick={v.backToTasks} style={sx({ fontSize: 18, color: 'rgba(255,255,255,0.6)' })}>‹</View>
+                <View onClick={v.backToTasks} style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
                 <View style={sx({ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' })}>
                   <View style={sx({ height: '100%', borderRadius: 2, background: '#8489e0', width: `${v.cardProgressPct}%` })} />
                 </View>
@@ -136,7 +144,7 @@ export default function Index() {
                   <Text onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ color: '#a5a8ec', fontWeight: 700, textDecoration: 'underline' })}>{v.currentSplit.word}</Text>
                   <Text>{v.currentSplit.post}</Text>
                 </Text>
-                <View onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ display: 'inline-block', marginTop: 6, fontSize: 11.5, color: '#a5a8ec', border: '1px solid rgba(165,168,236,0.35)', padding: '3px 10px', borderRadius: 20 })}>点击「{v.currentSentence.highlightWord}」查看详情 →</View>
+                <View onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ marginTop: 12, fontSize: 11.5, color: '#a5a8ec', border: '1px solid rgba(165,168,236,0.35)', padding: '6px 12px', borderRadius: 20, width: 'fit-content' })}>点击「{v.currentSentence.highlightWord}」查看详情 →</View>
               </View>
 
               <View>
@@ -183,6 +191,13 @@ export default function Index() {
                 <View onClick={v.prevCard} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13, opacity: v.prevOpacity })}>‹ 上一句</View>
                 <View onClick={v.togglePlay} style={sx({ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff', boxShadow: '0 6px 16px rgba(107,112,207,0.4)' })}>{v.playGlyph}</View>
                 <View onClick={v.nextCard} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13 })}>{v.nextLabel} ›</View>
+              </View>
+
+              <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 })}>
+                <View style={sx({ fontSize: 12, color: v.currentMasteryColor, background: 'rgba(255,255,255,0.04)', padding: '5px 12px', borderRadius: 16, border: `1px solid ${v.currentMasteryColor}33` })}>{v.currentMasteryLabel}</View>
+                {v.currentMastery !== 'mastered' && (
+                  <View onClick={v.markAsMastered} style={sx({ fontSize: 12, color: '#8ed6a8', background: 'rgba(142,214,168,0.1)', padding: '5px 14px', borderRadius: 16, border: '1px solid rgba(142,214,168,0.3)' })}>标记已掌握 ✓</View>
+                )}
               </View>
             </View>
           )}
@@ -247,7 +262,7 @@ export default function Index() {
                 onInput={(e) => v.setSearch(e.detail.value)}
                 placeholder="搜索单词或释义"
                 placeholderStyle={PLACEHOLDER}
-                style={sx({ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '11px 14px', fontSize: 13.5, color: '#eceaf3' })}
+                style={sx({ width: '100%', height: 42, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '0 14px', fontSize: 13.5, color: '#eceaf3' })}
               />
 
               <ScrollView scrollX style={sx({ whiteSpace: 'nowrap' })}>
@@ -297,11 +312,14 @@ export default function Index() {
                 <View style={sx({ display: 'flex', flexDirection: 'column', gap: 9 })}>
                   {v.mySongs.map((song) => (
                     <View key={song.key} onClick={song.onClick} style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
-                      <View style={sx({ width: 40, height: 40, borderRadius: 10, background: 'radial-gradient(circle at 35% 35%, #4a4f7a, #23263c)', flexShrink: 0 })} />
-                      <View style={sx({ flex: 1 })}>
-                        <View style={sx({ fontSize: 13.5, color: '#f0f0f5' })}>{song.title}</View>
+                      <View style={sx({ width: 40, height: 40, borderRadius: 10, background: song.avatarBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: 'rgba(255,255,255,0.85)', flexShrink: 0 })}>{song.avatarChar}</View>
+                      <View style={sx({ flex: 1, minWidth: 0 })}>
+                        <View style={sx({ fontSize: 13.5, color: '#f0f0f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{song.title}</View>
                         <View style={sx({ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 3 })}>{song.subtitle}</View>
                       </View>
+                      {song.onDelete && (
+                        <View onClick={(e) => { e.stopPropagation(); song.onDelete() }} style={sx({ width: 28, height: 28, borderRadius: '50%', background: 'rgba(220,80,80,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#e05050', flexShrink: 0 })}>✕</View>
+                      )}
                       <View style={sx({ color: 'rgba(255,255,255,0.25)', fontSize: 13 })}>›</View>
                     </View>
                   ))}
@@ -311,44 +329,77 @@ export default function Index() {
               <View>
                 <View style={sx({ fontSize: 13, fontWeight: 600, color: '#eceaf3', marginBottom: 8 })}>设置</View>
                 <View style={sx({ display: 'flex', flexDirection: 'column', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' })}>
-                  <View onClick={v.openSettings} style={sx({ display: 'flex', alignItems: 'center', padding: '13px 14px', fontSize: 13.5, color: '#eceaf3', borderBottom: '1px solid rgba(255,255,255,0.06)' })}><View style={sx({ flex: 1 })}>AI 解析设置</View><View style={sx({ color: v.hasApiKey ? '#8ed6a8' : 'rgba(255,255,255,0.4)', fontSize: 12 })}>{v.hasApiKey ? '自带 Key' : '云端托管'}</View><View style={sx({ color: 'rgba(255,255,255,0.25)', marginLeft: 8 })}>›</View></View>
-                  <View style={sx({ display: 'flex', alignItems: 'center', padding: '13px 14px', fontSize: 13.5, color: '#eceaf3', borderBottom: '1px solid rgba(255,255,255,0.06)' })}><View style={sx({ flex: 1 })}>学习目标</View><View style={sx({ color: 'rgba(255,255,255,0.4)', fontSize: 12 })}>每日 4 句</View><View style={sx({ color: 'rgba(255,255,255,0.25)', marginLeft: 8 })}>›</View></View>
-                  <View style={sx({ display: 'flex', alignItems: 'center', padding: '13px 14px', fontSize: 13.5, color: '#eceaf3', borderBottom: '1px solid rgba(255,255,255,0.06)' })}><View style={sx({ flex: 1 })}>通知</View><View style={sx({ color: 'rgba(255,255,255,0.25)' })}>›</View></View>
-                  <View style={sx({ display: 'flex', alignItems: 'center', padding: '13px 14px', fontSize: 13.5, color: '#eceaf3' })}><View style={sx({ flex: 1 })}>关于</View><View style={sx({ color: 'rgba(255,255,255,0.25)' })}>›</View></View>
+                  <View style={sx({ padding: '13px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' })}>
+                    <View style={sx({ display: 'flex', alignItems: 'center', fontSize: 13.5, color: '#eceaf3', marginBottom: 10 })}><View style={sx({ flex: 1 })}>字体大小</View><View style={sx({ color: 'rgba(255,255,255,0.4)', fontSize: 12 })}>{v.fontScaleLabel}</View></View>
+                    <View style={sx({ display: 'flex', gap: 8 })}>
+                      {v.fontScaleOptions.map((opt) => {
+                        const active = v.fontScale === opt.key
+                        return (
+                          <View key={opt.key} onClick={() => v.setFontScaleAction(opt.key)} style={sx({ flex: 1, textAlign: 'center', padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: active ? 600 : 400, color: active ? '#a5a8ec' : 'rgba(255,255,255,0.5)', background: active ? 'rgba(165,168,236,0.15)' : 'rgba(255,255,255,0.04)', border: active ? '1px solid rgba(165,168,236,0.4)' : '1px solid rgba(255,255,255,0.07)' })}>{opt.label}</View>
+                        )
+                      })}
+                    </View>
+                  </View>
+                  <View onClick={v.openAbout} style={sx({ display: 'flex', alignItems: 'center', padding: '13px 14px', fontSize: 13.5, color: '#eceaf3' })}><View style={sx({ flex: 1 })}>关于</View><View style={sx({ color: 'rgba(255,255,255,0.25)' })}>›</View></View>
                 </View>
               </View>
             </View>
           )}
 
-          {/* ============ SETTINGS ============ */}
-          {v.isSettings && (
-            <View style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
+          {/* ============ ABOUT ============ */}
+          {v.isAbout && (
+            <View style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 18 })}>
               <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                <View onClick={v.closeSettings} style={sx({ fontSize: 18, color: 'rgba(255,255,255,0.6)' })}>‹</View>
-                <Text style={sx({ fontSize: 20, fontWeight: 700, color: '#f5f4fa' })}>AI 解析设置</Text>
+                <View onClick={v.closeAbout} style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
+                <Text style={sx({ fontSize: 20, fontWeight: 700, color: '#f5f4fa' })}>关于</Text>
               </View>
 
-              <View style={sx({ fontSize: 12, lineHeight: 1.6, color: 'rgba(255,255,255,0.5)' })}>
-                默认由云函数用其环境变量里的 Key 解析（推荐，Key 不下发到手机）。下面留空即用云端配置；若想临时用自己的 Key，可在此填写，将随请求发给云函数。
+              <View style={sx({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' })}>
+                <View style={sx({ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#fff' })}>歌</View>
+                <Text style={sx({ fontFamily: '"Noto Serif SC", "Songti SC", Georgia, serif', fontSize: 24, color: '#f5f4fa', fontWeight: 600, letterSpacing: 1, marginTop: 4 })}>UtaNote</Text>
+                <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)' })}>v0.1.0</View>
+              </View>
+
+              <View style={sx({ fontSize: 13.5, color: '#dedcee', lineHeight: 1.8, textAlign: 'center' })}>
+                把一首日语歌拆成可学会的每一句。通过 AI 解析歌词，为每句生成注音、翻译、语法讲解和词汇卡片，让你在喜欢的音乐中自然习得日语。
+              </View>
+
+              <View style={sx({ borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', padding: '14px 16px' })}>
+                <View style={sx({ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 })}>
+                  <View style={sx({ fontSize: 15 })}>🔒</View>
+                  <View style={sx({ fontSize: 13, fontWeight: 600, color: '#eceaf3' })}>隐私优先</View>
+                </View>
+                <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 })}>
+                  你的歌词、收藏、学习进度等所有数据均保存在本设备本地存储中，不上传云端、不同步服务器。AI 解析仅将歌词文本发送至 DeepSeek 进行语法分析，不会关联任何个人信息。卸载小程序即彻底删除所有数据。
+                </View>
+              </View>
+
+              <View style={sx({ borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' })}>
+                <View style={sx({ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)', width: 70, flexShrink: 0 })}>开发者</View><View style={sx({ fontSize: 12.5, color: '#eceaf3' })}>jane-uske</View></View>
+                <View style={sx({ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)', width: 70, flexShrink: 0 })}>开源地址</View><View style={sx({ fontSize: 12.5, color: '#a5a8ec' })}>github.com/jane-uske/utanote</View></View>
+                <View style={sx({ padding: '12px 14px', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)', width: 70, flexShrink: 0 })}>AI 引擎</View><View style={sx({ fontSize: 12.5, color: '#eceaf3' })}>DeepSeek</View></View>
               </View>
 
               <View>
-                <View style={sx(fieldLabel)}>API 地址（可留空，用云端默认）</View>
-                <Input value={v.settingsDraft.baseURL} onInput={(e) => v.updateSettingsDraft({ baseURL: e.detail.value })} placeholder="https://api.deepseek.com" placeholderStyle={PLACEHOLDER} style={sx(fieldInput)} />
-              </View>
-              <View>
-                <View style={sx(fieldLabel)}>API Key（可留空）</View>
-                <Input password value={v.settingsDraft.apiKey} onInput={(e) => v.updateSettingsDraft({ apiKey: e.detail.value })} placeholder="sk-..." placeholderStyle={PLACEHOLDER} style={sx(fieldInput)} />
-              </View>
-              <View>
-                <View style={sx(fieldLabel)}>模型名（可留空）</View>
-                <Input value={v.settingsDraft.model} onInput={(e) => v.updateSettingsDraft({ model: e.detail.value })} placeholder="deepseek-chat" placeholderStyle={PLACEHOLDER} style={sx(fieldInput)} />
+                <View style={sx({ fontSize: 13, fontWeight: 600, color: '#eceaf3', marginBottom: 10 })}>未来计划 🚀</View>
+                <View style={sx({ display: 'flex', flexDirection: 'column', gap: 8 })}>
+                  {[
+                    { icon: '🎤', text: 'AI 评分带唱 & 教唱模式' },
+                    { icon: '🔊', text: 'TTS 语音朗读（单词 & 例句）' },
+                    { icon: '🎯', text: '每日学习目标与打卡' },
+                    { icon: '📊', text: '学习数据统计与进度追踪' },
+                    { icon: '👥', text: '分享成就卡片给好友' },
+                  ].map((item) => (
+                    <View key={item.text} style={sx({ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' })}>
+                      <View style={sx({ fontSize: 16, flexShrink: 0 })}>{item.icon}</View>
+                      <View style={sx({ fontSize: 12.5, color: 'rgba(255,255,255,0.65)' })}>{item.text}</View>
+                    </View>
+                  ))}
+                </View>
               </View>
 
-              <View onClick={v.saveSettingsAction} style={sx(primaryBtn)}>保存</View>
-
-              <View style={sx({ fontSize: 11, lineHeight: 1.6, color: 'rgba(255,255,255,0.35)' })}>
-                分词在云函数（Node）里完成；语法讲解、翻译、生词释义由 DeepSeek 生成。云函数走 wx.cloud.callFunction，无需配置 request 合法域名。
+              <View style={sx({ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 8 })}>
+                Made with ♡ for Japanese learners
               </View>
             </View>
           )}
@@ -368,6 +419,27 @@ export default function Index() {
         </View>
       )}
 
+      {/* ============ LOADING OVERLAY ============ */}
+      {v.parsing && (
+        <View style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
+          <View style={sx({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '0 32px' })}>
+            <View style={sx({ width: 44, height: 44, border: '3px solid rgba(255,255,255,0.15)', borderTopColor: '#a5a8ec', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
+            <View style={sx({ fontSize: 15, color: '#eceaf3', fontWeight: 600 })}>{v.parseStage || 'AI 正在解析歌词…'}</View>
+            {v.parseElapsed > 0 && (
+              <View style={sx({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 })}>
+                <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.5)' })}>已等待 {v.parseElapsed} 秒</View>
+                <View style={sx({ width: 180, height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' })}>
+                  <View style={sx({ height: '100%', borderRadius: 2, background: '#8489e0', width: `${Math.min(v.parseElapsed / 20 * 100, 95)}%`, transition: 'width 1s linear' })} />
+                </View>
+              </View>
+            )}
+            <View style={sx({ fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center', lineHeight: 1.6 })}>
+              {v.parseElapsed < 5 ? '分批并发请求 AI 中，通常 10~15 秒完成' : v.parseElapsed < 15 ? '正在等待 AI 返回结构化解析结果…' : '歌词较长，请耐心等待，即将完成'}
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* ============ WORD MODAL ============ */}
       {v.showModal && (
         <View onClick={v.closeWordModal} style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40, display: 'flex', alignItems: 'flex-end' })}>
@@ -383,7 +455,10 @@ export default function Index() {
                   <View style={sx({ fontSize: 22, fontWeight: 700, color: '#fff' })}>{v.currentDetail.word}</View>
                   <View onClick={v.togglePlay} style={sx({ fontSize: 14, color: v.playIconColor })}>🔊</View>
                 </View>
-                <View onClick={v.toggleFavorite} style={sx({ fontSize: 20, color: v.favoriteColor })}>{v.favoriteGlyph}</View>
+                <View style={sx({ display: 'flex', alignItems: 'center', gap: 10 })}>
+                  <View style={sx({ fontSize: 11, color: v.currentMasteryColor, padding: '3px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.05)' })}>{v.currentMasteryLabel}</View>
+                  <View onClick={v.toggleFavorite} style={sx({ fontSize: 20, color: v.favoriteColor })}>{v.favoriteGlyph}</View>
+                </View>
               </View>
               <View>
                 <View style={sx({ fontSize: 14, color: '#cfcde8' })}>{v.currentDetail.kana}</View>
