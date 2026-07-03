@@ -1,0 +1,9 @@
+{
+  "source": "user_uploaded_song",
+  "songId": "song-test",
+  "lineId": "01",
+  "assetType": "sentence_normal",
+  "text": "夜風が静かに 窓をたたく",
+  "voice": "voicevox_sora_normal",
+  "speedScale": 0.9
+}
