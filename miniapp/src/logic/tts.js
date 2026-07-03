@@ -1,16 +1,49 @@
 import Taro from '@tarojs/taro'
 
-const LOCAL_TTS_CACHE = 'utanote.tts.localAudio.v1'
-const LOCAL_ENGINE_VERSION = 'voicevox-v1'
+const LOCAL_TTS_CACHE = 'utanote.tts.localAudio.v2'
+const LOCAL_ENGINE_VERSION = 'voicevox-v0.1.0'
 const LOCAL_CACHE_LIMIT = 80
 const JP_ORTHOGRAPHY_REPLACEMENTS = {
-  风: '風',
+  '风': '風', // 风→風
 }
 
-function normalizeText(text) {
+// ── Particle helpers ──────────────────────────────────────────────
+const JAPANESE_PARTICLES = new Set([
+  'が', 'を', 'に', 'へ', 'で', 'と', 'から', 'まで',
+  'より', 'の', 'は', 'も', 'や', 'か', 'な', 'ね', 'よ', 'わ',
+])
+
+export function isStandaloneParticle(text) {
+  return JAPANESE_PARTICLES.has(String(text || '').trim())
+}
+
+/**
+ * Given a token and the full tokens array, determine the audioText.
+ * For particles (が, を, etc.), use the preceding word + particle.
+ */
+export function resolveTokenAudioText(token, index, allTokens) {
+  const displayText = String(token.text || '').trim()
+  if (!displayText) return ''
+
+  // Check if this is a standalone particle
+  if (isStandaloneParticle(displayText) && index > 0 && allTokens) {
+    const prev = allTokens[index - 1]
+    if (prev && prev.text && !isStandaloneParticle(String(prev.text).trim())) {
+      return String(prev.text).trim() + displayText
+    }
+  }
+
+  return displayText
+}
+
+// ── Text normalization ────────────────────────────────────────────
+
+export function normalizeTtsText(text) {
   const normalized = String(text || '').trim().replace(/\s+/g, ' ')
   return normalized.replace(/[风]/g, (char) => JP_ORTHOGRAPHY_REPLACEMENTS[char] || char)
 }
+
+// ── Local cache ───────────────────────────────────────────────────
 
 function stableHash(value) {
   const source = String(value || '')
@@ -56,18 +89,12 @@ function fileExists(path) {
 
 export function buildTtsLocalCacheKey(data) {
   const source = JSON.stringify({
-    songId: data && data.songId,
-    lineId: data && data.lineId,
-    text: normalizeText(data && data.text),
-    voice: (data && data.voice) || 'voicevox_default_female',
+    text: normalizeTtsText(data && data.audioText || data && data.text),
+    voice: (data && data.voice) || 'voicevox_sora_normal',
     speedScale: data && data.speedScale,
     engineVersion: LOCAL_ENGINE_VERSION,
   })
   return 'tts:' + stableHash(source)
-}
-
-export function normalizeTtsText(text) {
-  return normalizeText(text)
 }
 
 export function getCachedTtsAudioSrc(cacheKey) {
@@ -99,10 +126,11 @@ async function saveTtsAudioToDevice(cacheKey, tempFilePath, fileID) {
   }
 }
 
-export async function generateLineTts(data) {
+export async function ensureTtsAsset(data) {
   let res
   try {
     res = await Taro.cloud.callFunction({
+      // 云端实现在 generateLineTts（单一真实来源）；此处直调，省去别名转发一跳
       name: 'generateLineTts',
       data,
     })
@@ -113,6 +141,10 @@ export async function generateLineTts(data) {
   if (!r || !r.ok) {
     const err = new Error((r && (r.error || r.message)) || '语音生成失败，请稍后再试')
     err.code = r && r.code
+    err.quotaInfo = r && r.remainingGenerateCount != null ? {
+      remaining: r.remainingGenerateCount,
+      limit: r.dailyGenerateLimit,
+    } : null
     throw err
   }
   return r
