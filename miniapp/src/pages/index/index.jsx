@@ -1,7 +1,16 @@
+import { useRef, useState } from 'react'
 import { View, Text, Textarea, Input, ScrollView } from '@tarojs/components'
 import { useUtaNote } from '../../logic/useUtaNote'
 import { sx } from '../../logic/sx'
 import './index.css'
+
+// Swipe tuning for the card screen (Douyin-style vertical flip):
+// finger tracks 1:1 while dragging, then either commits to prev/next
+// (fast flick or dragged far enough) or rubber-bands back to center.
+const SWIPE_COMMIT_DISTANCE = 56 // px — always commits past this
+const SWIPE_FLICK_DISTANCE = 22  // px — commits if also this fast
+const SWIPE_FLICK_MS = 280
+const SWIPE_MAX_DRAG = 110       // px — visual clamp while dragging
 
 const primaryBtn = {
   textAlign: 'center', padding: 14, borderRadius: 14,
@@ -27,6 +36,46 @@ const PLACEHOLDER = 'color: rgba(255,255,255,0.3)'
 
 export default function Index() {
   const v = useUtaNote()
+
+  // Live-tracking swipe for the card screen — dragY follows the finger
+  // during the gesture (dragAnim off), then either snaps instantly (a
+  // committed swipe hands off to the card's own entrance animation) or
+  // eases back to 0 (an aborted drag, dragAnim on).
+  const [dragY, setDragY] = useState(0)
+  const [dragAnim, setDragAnim] = useState(false)
+  const touchRef = useRef({ y: 0, t: 0, active: false })
+
+  const onCardTouchStart = (e) => {
+    if (v.showModal) return
+    const t = e.touches && e.touches[0]
+    if (!t) return
+    touchRef.current = { y: t.clientY, t: Date.now(), active: true }
+    setDragAnim(false)
+  }
+  const onCardTouchMove = (e) => {
+    if (!touchRef.current.active) return
+    const t = e.touches && e.touches[0]
+    if (!t) return
+    const raw = t.clientY - touchRef.current.y
+    setDragY(Math.max(-SWIPE_MAX_DRAG, Math.min(SWIPE_MAX_DRAG, raw)))
+  }
+  const onCardTouchEnd = () => {
+    if (!touchRef.current.active) return
+    touchRef.current.active = false
+    const dy = dragY
+    const dt = Date.now() - touchRef.current.t
+    const commit = Math.abs(dy) > SWIPE_COMMIT_DISTANCE
+      || (dt < SWIPE_FLICK_MS && Math.abs(dy) > SWIPE_FLICK_DISTANCE)
+    if (commit) {
+      setDragAnim(false)
+      setDragY(0)
+      if (dy < 0) v.nextCard()
+      else v.prevCard()
+    } else {
+      setDragAnim(true)
+      setDragY(0)
+    }
+  }
 
   return (
     <View
@@ -84,7 +133,7 @@ export default function Index() {
               {v.parseError ? <View onClick={v.dismissParseError} style={sx(errBanner)}>{v.parseError}（点击关闭）</View> : null}
               {v.parseNotice ? <View onClick={v.dismissParseNotice} style={sx(noticeBanner)}>{v.parseNotice}（点击关闭）</View> : null}
 
-              <View onClick={v.parsing ? undefined : v.startBreakdown} className="tap" hoverClass="press" style={sx({ ...primaryBtn, opacity: v.parsing ? 0.6 : 1 })}>
+              <View onClick={v.parsing ? undefined : v.startBreakdown} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ ...primaryBtn, opacity: v.parsing ? 0.6 : 1 })}>
                 {v.parsing ? '解析中…' : '开始拆解 ✨'}
               </View>
             </View>
@@ -109,7 +158,7 @@ export default function Index() {
 
               <View style={sx({ display: 'flex', flexDirection: 'column', gap: 9 })}>
                 {v.taskRows.map((row) => (
-                  <View key={row.key} onClick={row.onClick} className="tap" hoverClass="press" style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: `1px solid ${row.borderColor}` })}>
+                  <View key={row.key} onClick={row.onClick} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: `1px solid ${row.borderColor}` })}>
                     <View style={sx({ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'rgba(255,255,255,0.5)', flexShrink: 0 })}>{row.label}</View>
                     <View style={sx({ flex: 1, fontSize: 13.5, color: '#eceaf3' })}>{row.text}</View>
                     <View style={sx({ fontSize: 10.5, padding: '3px 8px', borderRadius: 20, background: row.badgeBg, color: row.badgeColor, flexShrink: 0 })}>{row.status}</View>
@@ -118,93 +167,96 @@ export default function Index() {
                 ))}
               </View>
 
-              <View onClick={v.startPractice} className="tap" hoverClass="press" style={sx(primaryBtn)}>开始今天的练习 ▶</View>
+              <View onClick={v.startPractice} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx(primaryBtn)}>开始今天的练习 ▶</View>
             </View>
           )}
 
           {/* ============ CARD ============ */}
           {v.isCard && (
             <View className="screen" style={sx({ padding: '2px 22px 20px', display: 'flex', flexDirection: 'column', gap: 18 })}>
-              <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                <View onClick={v.backToTasks} className="tap" hoverClass="press" style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
-                <View style={sx({ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' })}>
-                  <View style={sx({ height: '100%', borderRadius: 2, background: '#8489e0', width: `${v.cardProgressPct}%`, transition: 'width 0.3s ease' })} />
+              {/* Swipeable region — tracks the finger live (Douyin-style), then either
+                  commits to prevCard/nextCard or eases back to center. Header rides
+                  along with the drag; the docked bottom bar (outside the ScrollView)
+                  stays put so it never floats in dead space below short cards. */}
+              <View
+                onTouchStart={onCardTouchStart}
+                catchTouchMove={onCardTouchMove}
+                onTouchEnd={onCardTouchEnd}
+                onTouchCancel={onCardTouchEnd}
+                style={sx({ display: 'flex', flexDirection: 'column', gap: 18, transform: `translateY(${dragY}px)`, transition: dragAnim ? 'transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none' })}
+              >
+                <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
+                  <View onClick={v.backToTasks} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
+                  <View style={sx({ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' })}>
+                    <View style={sx({ height: '100%', borderRadius: 2, background: '#8489e0', width: `${v.cardProgressPct}%`, transition: 'width 0.3s ease' })} />
+                  </View>
+                  <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' })}>{v.cardPositionLabel}</View>
+                  <View style={sx({ color: 'rgba(255,255,255,0.35)', fontSize: 15 })}>⋮</View>
                 </View>
-                <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' })}>{v.cardPositionLabel}</View>
-                <View style={sx({ color: 'rgba(255,255,255,0.35)', fontSize: 15 })}>⋮</View>
-              </View>
 
-              {/* Keyed by card position: flipping 上一句/下一句 remounts this block,
-                  replaying the card-in slide. Header/nav stay mounted. */}
-              <View key={v.cardPositionLabel} className="card-in" style={sx({ display: 'flex', flexDirection: 'column', gap: 18 })}>
-              <View>
-                <View style={sx({ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 })}>
-                  <View style={sx({ fontSize: 13, color: 'rgba(255,255,255,0.45)' })}>今日第 {v.currentSentence.num} 句</View>
-                  <View onClick={v.togglePlay} style={sx({ fontSize: 13, color: v.playIconColor })}>🔊</View>
+                {/* Keyed by card position: flipping/swiping 上一句/下一句 remounts this
+                    block, replaying the direction-matched card-in slide. */}
+                <View key={v.cardPositionLabel} className={v.cardAnimClass} style={sx({ display: 'flex', flexDirection: 'column', gap: 18 })}>
+                <View>
+                  <View style={sx({ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 })}>
+                    <View style={sx({ fontSize: 13, color: 'rgba(255,255,255,0.45)' })}>今日第 {v.currentSentence.num} 句</View>
+                    <View onClick={v.togglePlay} style={sx({ fontSize: 13, color: v.playIconColor })}>🔊</View>
+                  </View>
+                  <Text style={sx({ fontSize: 21, lineHeight: 1.6, color: '#f5f4fa', fontWeight: 600 })}>
+                    <Text>{v.currentSplit.pre}</Text>
+                    <Text onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ color: '#a5a8ec', fontWeight: 700, textDecoration: 'underline' })}>{v.currentSplit.word}</Text>
+                    <Text>{v.currentSplit.post}</Text>
+                  </Text>
+                  <View onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ marginTop: 12, fontSize: 11.5, color: '#a5a8ec', border: '1px solid rgba(165,168,236,0.35)', padding: '6px 12px', borderRadius: 20, width: 'fit-content' })}>点击「{v.currentSentence.highlightWord}」查看详情 →</View>
                 </View>
-                <Text style={sx({ fontSize: 21, lineHeight: 1.6, color: '#f5f4fa', fontWeight: 600 })}>
-                  <Text>{v.currentSplit.pre}</Text>
-                  <Text onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ color: '#a5a8ec', fontWeight: 700, textDecoration: 'underline' })}>{v.currentSplit.word}</Text>
-                  <Text>{v.currentSplit.post}</Text>
-                </Text>
-                <View onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ marginTop: 12, fontSize: 11.5, color: '#a5a8ec', border: '1px solid rgba(165,168,236,0.35)', padding: '6px 12px', borderRadius: 20, width: 'fit-content' })}>点击「{v.currentSentence.highlightWord}」查看详情 →</View>
-              </View>
 
-              <View>
-                <View style={sx({ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', marginBottom: 4 })}>整句语法结构</View>
-                <View style={sx({ fontSize: 12, color: '#a5a8ec', marginBottom: 8 })}>{v.currentSentence.structure}</View>
-                <View style={sx({ display: 'flex', flexWrap: 'wrap', gap: 6 })}>
-                  {v.tokenViews.map((tok) => (
-                    <View key={tok.key} style={sx({ textAlign: 'center', padding: '6px 10px', borderRadius: 8, background: tok.bg, border: tok.border })}>
-                      {tok.reading ? <View style={sx({ fontSize: 9, color: 'rgba(255,255,255,0.4)', lineHeight: 1.3 })}>{tok.reading}</View> : null}
-                      <View style={sx({ fontSize: 13, color: tok.color, fontWeight: tok.weight })}>{tok.text}</View>
-                      <View style={sx({ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2, whiteSpace: 'nowrap' })}>{tok.role}</View>
+                <View>
+                  <View style={sx({ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', marginBottom: 4 })}>整句语法结构</View>
+                  <View style={sx({ fontSize: 12, color: '#a5a8ec', marginBottom: 8 })}>{v.currentSentence.structure}</View>
+                  <View style={sx({ display: 'flex', flexWrap: 'wrap', gap: 6 })}>
+                    {v.tokenViews.map((tok) => (
+                      <View key={tok.key} style={sx({ textAlign: 'center', padding: '6px 10px', borderRadius: 8, background: tok.bg, border: tok.border })}>
+                        {tok.reading ? <View style={sx({ fontSize: 9, color: 'rgba(255,255,255,0.4)', lineHeight: 1.3 })}>{tok.reading}</View> : null}
+                        <View style={sx({ fontSize: 13, color: tok.color, fontWeight: tok.weight })}>{tok.text}</View>
+                        <View style={sx({ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2, whiteSpace: 'nowrap' })}>{tok.role}</View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View onClick={v.toggleRomaji} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 12px', width: 'fit-content' })}>
+                  <Text>{v.romajiToggleLabel}</Text>
+                  <Text style={sx({ transform: v.romajiArrowRotate, transition: 'transform 0.25s ease' })}>⌄</Text>
+                </View>
+
+                {v.romajiOpen && (
+                  <View className="panel-in" style={sx({ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)' })}>
+                    <View style={sx({ fontSize: 13, color: '#cfcde8' })}>{v.currentSentence.furigana}</View>
+                    <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' })}>{v.currentSentence.romaji}</View>
+                  </View>
+                )}
+
+                <View>
+                  <View style={sx({ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', marginBottom: 6 })}>中文释义</View>
+                  <View style={sx({ fontSize: 14, color: '#dedcee', lineHeight: 1.5 })}>{v.currentSentence.translation}</View>
+                </View>
+
+                <View style={sx({ display: 'flex', gap: 8 })}>
+                  {(v.currentSentence.tips || []).map((tip, i) => (
+                    <View key={i} style={sx({ flex: 1, textAlign: 'center', padding: '9px 4px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.07)' })}>
+                      <View style={sx({ fontSize: 12.5, color: '#eceaf3' })}>{tip.main}</View>
+                      <View style={sx({ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 })}>{tip.label}</View>
                     </View>
                   ))}
                 </View>
-              </View>
-
-              <View onClick={v.toggleRomaji} className="tap" hoverClass="press" style={sx({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 12px', width: 'fit-content' })}>
-                <Text>{v.romajiToggleLabel}</Text>
-                <Text style={sx({ transform: v.romajiArrowRotate, transition: 'transform 0.25s ease' })}>⌄</Text>
-              </View>
-
-              {v.romajiOpen && (
-                <View className="panel-in" style={sx({ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)' })}>
-                  <View style={sx({ fontSize: 13, color: '#cfcde8' })}>{v.currentSentence.furigana}</View>
-                  <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' })}>{v.currentSentence.romaji}</View>
                 </View>
-              )}
-
-              <View>
-                <View style={sx({ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', marginBottom: 6 })}>中文释义</View>
-                <View style={sx({ fontSize: 14, color: '#dedcee', lineHeight: 1.5 })}>{v.currentSentence.translation}</View>
-              </View>
-
-              <View style={sx({ display: 'flex', gap: 8 })}>
-                {(v.currentSentence.tips || []).map((tip, i) => (
-                  <View key={i} style={sx({ flex: 1, textAlign: 'center', padding: '9px 4px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.07)' })}>
-                    <View style={sx({ fontSize: 12.5, color: '#eceaf3' })}>{tip.main}</View>
-                    <View style={sx({ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 })}>{tip.label}</View>
-                  </View>
-                ))}
-              </View>
-              </View>
-
-              <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 8 })}>
-                <View onClick={v.prevCard} className="tap" hoverClass="press" style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13, opacity: v.prevOpacity })}>‹ 上一句</View>
-                <View onClick={v.togglePlay} className="tap" hoverClass="press" style={sx({ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff', boxShadow: '0 6px 16px rgba(107,112,207,0.4)' })}>{v.playGlyph}</View>
-                <View onClick={v.nextCard} className="tap" hoverClass="press" style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13 })}>{v.nextLabel} ›</View>
-              </View>
-
-              <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 })}>
-                <View style={sx({ fontSize: 12, color: v.currentMasteryColor, background: 'rgba(255,255,255,0.04)', padding: '5px 12px', borderRadius: 16, border: `1px solid ${v.currentMasteryColor}33` })}>{v.currentMasteryLabel}</View>
-                {v.currentMastery !== 'mastered' && (
-                  <View onClick={v.markAsMastered} style={sx({ fontSize: 12, color: '#8ed6a8', background: 'rgba(142,214,168,0.1)', padding: '5px 14px', borderRadius: 16, border: '1px solid rgba(142,214,168,0.3)' })}>标记已掌握 ✓</View>
-                )}
               </View>
             </View>
           )}
+
+          {/* CARD screen intentionally has no bottom padding above — its action
+              bar is docked outside the ScrollView (below), not part of this
+              scrollable content, so it never floats in empty space. */}
 
           {/* ============ SUMMARY ============ */}
           {v.isSummary && (
@@ -252,7 +304,7 @@ export default function Index() {
                 </View>
               </View>
 
-              <View onClick={v.goHome} className="tap" hoverClass="press" style={sx({ textAlign: 'center', padding: 13, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#eceaf3', fontSize: 14, fontWeight: 600 })}>分享成就卡片 ⤴</View>
+              <View onClick={v.goHome} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ textAlign: 'center', padding: 13, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#eceaf3', fontSize: 14, fontWeight: 600 })}>分享成就卡片 ⤴</View>
             </View>
           )}
 
@@ -285,7 +337,7 @@ export default function Index() {
 
               <View style={sx({ display: 'flex', flexDirection: 'column', gap: 9 })}>
                 {v.filteredVocab.map((vv) => (
-                  <View key={vv.key} onClick={vv.onClick} className="tap" hoverClass="press" style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
+                  <View key={vv.key} onClick={vv.onClick} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
                     <View style={sx({ flex: 1 })}>
                       <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
                         <View style={sx({ fontSize: 15, fontWeight: 600, color: '#f0f0f5' })}>{vv.word}</View>
@@ -315,7 +367,7 @@ export default function Index() {
                 <View style={sx({ fontSize: 13, fontWeight: 600, color: '#eceaf3', marginBottom: 8 })}>我的歌曲</View>
                 <View style={sx({ display: 'flex', flexDirection: 'column', gap: 9 })}>
                   {v.mySongs.map((song) => (
-                    <View key={song.key} onClick={song.onClick} className="tap" hoverClass="press" style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
+                    <View key={song.key} onClick={song.onClick} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
                       <View style={sx({ width: 40, height: 40, borderRadius: 10, background: song.avatarBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: 'rgba(255,255,255,0.85)', flexShrink: 0 })}>{song.avatarChar}</View>
                       <View style={sx({ flex: 1, minWidth: 0 })}>
                         <View style={sx({ fontSize: 13.5, color: '#f0f0f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{song.title}</View>
@@ -354,7 +406,7 @@ export default function Index() {
           {v.isAbout && (
             <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 18 })}>
               <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                <View onClick={v.closeAbout} className="tap" hoverClass="press" style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
+                <View onClick={v.closeAbout} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
                 <Text style={sx({ fontSize: 20, fontWeight: 700, color: '#f5f4fa' })}>关于</Text>
               </View>
 
@@ -411,6 +463,24 @@ export default function Index() {
         </View>
       </ScrollView>
 
+      {/* ============ CARD ACTION BAR (docked to viewport bottom, like the tab bar) ============ */}
+      {v.isCard && (
+        <View style={sx({ padding: '10px 22px 22px', display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(13,17,32,0.95)' })}>
+          <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 })}>
+            <View onClick={v.prevCard} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13, opacity: v.prevOpacity })}>‹ 上一句</View>
+            <View onClick={v.togglePlay} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff', boxShadow: '0 6px 16px rgba(107,112,207,0.4)' })}>{v.playGlyph}</View>
+            <View onClick={v.nextCard} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13 })}>{v.nextLabel} ›</View>
+          </View>
+
+          <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 })}>
+            <View style={sx({ fontSize: 12, color: v.currentMasteryColor, background: 'rgba(255,255,255,0.04)', padding: '5px 12px', borderRadius: 16, border: `1px solid ${v.currentMasteryColor}33` })}>{v.currentMasteryLabel}</View>
+            {v.currentMastery !== 'mastered' && (
+              <View onClick={v.markAsMastered} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 12, color: '#8ed6a8', background: 'rgba(142,214,168,0.1)', padding: '5px 14px', borderRadius: 16, border: '1px solid rgba(142,214,168,0.3)' })}>标记已掌握 ✓</View>
+            )}
+          </View>
+        </View>
+      )}
+
       {/* ============ TAB BAR ============ */}
       {v.showTabBar && (
         <View style={sx({ display: 'flex', padding: '10px 8px 26px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(13,17,32,0.95)' })}>
@@ -451,7 +521,7 @@ export default function Index() {
             <View style={sx({ padding: '14px 20px 26px', display: 'flex', flexDirection: 'column', gap: 14 })}>
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                 <View style={sx({ fontSize: 13, color: 'rgba(255,255,255,0.4)' })}>词语详情</View>
-                <View onClick={v.closeWordModal} className="tap" hoverClass="press" style={sx({ width: 36, height: 36, marginRight: -8, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: 'rgba(255,255,255,0.65)', flexShrink: 0 })}>✕</View>
+                <View onClick={v.closeWordModal} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 36, height: 36, marginRight: -8, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: 'rgba(255,255,255,0.65)', flexShrink: 0 })}>✕</View>
               </View>
 
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>

@@ -57,6 +57,7 @@ export function useUtaNote() {
   const [modalDetail, setModalDetail] = useState(null)
   const [streakDays, setStreakDays] = useState(() => currentStreak())
   const [romajiOpen, setRomajiOpen] = useState(false)
+  const [navDir, setNavDir] = useState('next')
   const [favorites, setFavorites] = useState(() => loadFavorites())
   const [lyricsText, setLyricsText] = useState('')
   const [songTitle, setSongTitle] = useState('')
@@ -102,8 +103,14 @@ export function useUtaNote() {
   }
   const startPractice = () => openCard(0)
   const backToTasks = () => setStudyPhase('tasks')
-  const prevCard = () => { setCardIndex((i) => Math.max(0, i - 1)); setRomajiOpen(false); setShowModal(false) }
+  // navDir drives which edge the next card slides in from (index.css
+  // .card-in-next/.card-in-prev) — kept in sync for both button taps and swipes,
+  // since swipe gestures call these same functions.
+  const prevCard = () => {
+    setNavDir('prev'); setCardIndex((i) => Math.max(0, i - 1)); setRomajiOpen(false); setShowModal(false)
+  }
   const nextCard = () => {
+    setNavDir('next')
     if (safeIndex >= total - 1) { setStudyPhase('summary'); return }
     setCardIndex(safeIndex + 1); setRomajiOpen(false); setShowModal(false)
   }
@@ -350,6 +357,7 @@ export function useUtaNote() {
     tokenViews,
     cardPositionLabel: `${safeIndex + 1} / ${total}`,
     cardProgressPct: total ? Math.round(((safeIndex + 1) / total) * 100) : 0,
+    cardAnimClass: navDir === 'prev' ? 'card-in-prev' : 'card-in-next',
     romajiOpen,
     romajiToggleLabel: romajiOpen ? '收起假名/罗马音' : '显示假名/罗马音',
     romajiArrowRotate: romajiOpen ? 'rotate(180deg)' : 'rotate(0deg)',

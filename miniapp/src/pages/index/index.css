@@ -25,12 +25,18 @@ page, view, text, textarea, input, scroll-view {
 }
 .screen { animation: screen-in 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 
-/* Per-card slide when flipping 上一句/下一句 (content keyed by index). */
-@keyframes card-in {
-  from { opacity: 0; transform: translateX(22px); }
-  to   { opacity: 1; transform: translateX(0); }
+/* Per-card slide when flipping/swiping 上一句/下一句 (content keyed by index).
+   Direction-aware, Douyin-style: next enters from below, prev enters from above. */
+@keyframes card-in-next {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.card-in { animation: card-in 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+@keyframes card-in-prev {
+  from { opacity: 0; transform: translateY(-22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card-in-next { animation: card-in-next 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.card-in-prev { animation: card-in-prev 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 
 /* Collapsible panels (假名/罗马音). */
 @keyframes panel-in {
