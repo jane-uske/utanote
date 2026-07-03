@@ -1,0 +1,8 @@
+{
+  "source": "user_uploaded_song",
+  "songId": "song-test",
+  "lineId": "01",
+  "assetType": "sentence_slow",
+  "text": "夜風が静かに 窓をたたく",
+  "speedScale": 0.7
+}
