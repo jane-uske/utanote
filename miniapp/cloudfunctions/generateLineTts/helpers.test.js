@@ -5,6 +5,7 @@ const {
   voiceToSpeaker,
   buildCacheKey,
   cloudPathSegment,
+  DAILY_GENERATE_LIMIT,
 } = require('./helpers')
 
 assert.strictEqual(validateText('  春 の 風  ').text, '春 の 風')
@@ -19,13 +20,16 @@ assert.strictEqual(voiceToSpeaker('voicevox_zundamon_normal'), 3)
 assert.strictEqual(voiceToSpeaker('voicevox_sora_normal'), 16)
 assert.strictEqual(voiceToSpeaker('voicevox_default_female'), 2)
 assert.strictEqual(voiceToSpeaker('unknown'), 16)
+assert.ok(DAILY_GENERATE_LIMIT >= 100)
 
 const keyA = buildCacheKey({ songId: 's1', lineId: 'l1', text: '君がいた', voice: 'voicevox_default_female', speedScale: 0.9 })
-const keyB = buildCacheKey({ songId: 's1', lineId: 'l1', text: '君がいた', voice: 'voicevox_default_female', speedScale: 1.15 })
-const keyC = buildCacheKey({ songId: 's1', lineId: 'l1', text: '君がいた', voice: 'voicevox_zundamon_normal', speedScale: 0.9 })
+const keyB = buildCacheKey({ songId: 's2', lineId: 'l9', text: '君がいた', voice: 'voicevox_default_female', speedScale: 0.9 })
+const keyC = buildCacheKey({ songId: 's1', lineId: 'l1', text: '君がいた', voice: 'voicevox_default_female', speedScale: 1.15 })
+const keyD = buildCacheKey({ songId: 's1', lineId: 'l1', text: '君がいた', voice: 'voicevox_zundamon_normal', speedScale: 0.9 })
 assert.match(keyA, /^[a-f0-9]{32}$/)
-assert.notStrictEqual(keyA, keyB)
+assert.strictEqual(keyA, keyB, 'global cache must ignore songId/lineId')
 assert.notStrictEqual(keyA, keyC)
+assert.notStrictEqual(keyA, keyD)
 assert.strictEqual(cloudPathSegment('song/../x', 'fallback'), 'song_.._x')
 
 console.log('generateLineTts helpers ok')
