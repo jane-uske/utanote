@@ -161,3 +161,12 @@ page {
 /* Touch feedback: className="tap" + hoverClass="press". */
 .tap { transition: transform 0.15s ease, opacity 0.15s ease; }
 .press { transform: scale(0.96); opacity: 0.8; }
+
+/* Strip weapp's native <button> chrome so an open-type=share button matches
+   the custom-drawn UI (no default bg / min-width / ::after border). */
+.plain-btn { margin: 0; min-width: 0; background: transparent; line-height: 1.4; font-size: inherit; color: inherit; }
+.plain-btn::after { border: none; }
+
+/* Easter-egg hint — a low-key breathing entry point under the example. */
+@keyframes egg-breathe { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+.egg-hint { animation: egg-breathe 2.6s ease-in-out infinite; }

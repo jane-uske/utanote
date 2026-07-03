@@ -3,9 +3,10 @@ import Taro from '@tarojs/taro'
 import { sampleLyrics } from '../data'
 import { loadSongs, addSong, deleteSong, loadMastery, getMastery, setMastery } from './library'
 import { currentStreak, recordStudy } from './streak'
-import { parseLyrics } from './parse'
+import { parseLyrics, looksJapanese } from './parse'
 import { buildTtsLocalCacheKey, ensureTtsAsset, getCachedTtsAudioSrc, normalizeTtsText, resolveTtsAudioSrc, resolveTokenAudioText } from './tts'
 import { initFontScale, getFontScale, setFontScale as _setFontScale } from './sx'
+import { findEasterEgg, TAP_EGG_MESSAGE, TAP_EGG_THRESHOLD, TAP_EGG_COOLDOWN_MS } from './eastereggs'
 
 // UtaNote logic layer — identical shape to the web app's hook, but parsing goes
 // through the `parse` cloud function and persistence uses Taro storage.
@@ -80,6 +81,29 @@ function getSystemTheme() {
   } catch { return 'dark' }
 }
 
+// navigationStyle:'custom' means there's no native nav bar to align to, so any
+// custom header row has to be measured against the capsule (胶囊按钮) by hand.
+// navBarHeight mirrors the standard WeChat recipe — doubling the gap between
+// the status bar and the capsule's top gives a bar whose vertical center lines
+// up with the capsule's, regardless of device/notch height.
+function getNavMetrics() {
+  try {
+    const capsule = Taro.getMenuButtonBoundingClientRect()
+    const sys = Taro.getSystemInfoSync()
+    const statusBarHeight = sys.statusBarHeight || 20
+    const navBarHeight = (capsule.top - statusBarHeight) * 2 + capsule.height
+    const windowWidth = sys.windowWidth || sys.screenWidth || 375
+    return {
+      navBarPaddingTop: statusBarHeight,
+      navBarHeight,
+      navBarRightReserve: windowWidth - capsule.left + 8,
+      capsuleBottom: capsule.top + capsule.height,
+    }
+  } catch {
+    return { navBarPaddingTop: 20, navBarHeight: 32, navBarRightReserve: 96, capsuleBottom: 60 }
+  }
+}
+
 export function useUtaNote() {
   const [activeTab, setActiveTab] = useState('home')
   const [studyPhase, setStudyPhase] = useState('tasks')
@@ -105,12 +129,17 @@ export function useUtaNote() {
   const [masteryMap, setMasteryMap] = useState(() => loadMastery())
   const [fontScale, setFontScaleState] = useState(() => getFontScale())
   const [ttsVoice, setTtsVoiceState] = useState(() => loadTtsVoice())
+  const [navMetrics] = useState(() => getNavMetrics())
 
   const [parsing, setParsing] = useState(false)
   const [parseStage, setParseStage] = useState('')
   const [parseElapsed, setParseElapsed] = useState(0)
   const [parseError, setParseError] = useState('')
   const [parseNotice, setParseNotice] = useState('')
+  const [eggOpen, setEggOpen] = useState(false)
+  const [eggFlash, setEggFlash] = useState('')
+  const eggTapRef = useRef({ count: 0, coolUntil: 0 })
+  const eggFlashTimerRef = useRef(null)
   const audioRef = useRef(null)
   const parseTimerRef = useRef(null)
   const modalTimerRef = useRef(null)
@@ -158,6 +187,7 @@ export function useUtaNote() {
       }
       if (parseTimerRef.current) clearInterval(parseTimerRef.current)
       if (modalTimerRef.current) clearTimeout(modalTimerRef.current)
+      if (eggFlashTimerRef.current) clearTimeout(eggFlashTimerRef.current)
     }
   }, [])
 
@@ -199,7 +229,7 @@ export function useUtaNote() {
   const toggleRomaji = () => setRomajiOpen((v) => !v)
   const openWordModal = (detail) => {
     if (modalTimerRef.current) clearTimeout(modalTimerRef.current)
-    setModalClosing(false); setModalDetail(detail); setShowModal(true)
+    setModalClosing(false); setModalDetail(detail); setShowModal(true); setEggOpen(false)
   }
   // Play the sheet's exit animation, then unmount (duration matches
   // .modal-sheet.closing in index.css).
@@ -352,7 +382,25 @@ export function useUtaNote() {
       kana: detail.kana || '',
     })
   }
+  // Cumulative-tap easter egg①: every TAP_EGG_THRESHOLD-th tap on the example
+  // 🔊 flashes one gentle line, then stays quiet for a cooldown. No time window
+  // — taps just accumulate, so pace doesn't matter (a plain counter, not a combo).
+  const bumpExampleTap = () => {
+    const now = Date.now()
+    const s = eggTapRef.current
+    if (now < s.coolUntil) return
+    s.count += 1
+    if (s.count >= TAP_EGG_THRESHOLD) {
+      s.count = 0
+      s.coolUntil = now + TAP_EGG_COOLDOWN_MS
+      setEggFlash(TAP_EGG_MESSAGE)
+      if (eggFlashTimerRef.current) clearTimeout(eggFlashTimerRef.current)
+      eggFlashTimerRef.current = setTimeout(() => setEggFlash(''), 4000)
+    }
+  }
+  const toggleEgg = () => setEggOpen((o) => !o)
   const playExampleTts = () => {
+    bumpExampleTap()
     const detail = modalDetail || (current && current.detail) || {}
     const jp = detail.example && detail.example.jp
     return toggleTts({
@@ -409,6 +457,10 @@ export function useUtaNote() {
       setParseNotice(''); setParseError('歌词最多支持 5000 字，请删减后再试。')
       return
     }
+    if (!looksJapanese(lyricsText)) {
+      setParseNotice(''); setParseError('这段内容看起来不是日语歌词，UtaNote 目前只支持日语歌曲，请确认后再试。')
+      return
+    }
     setParseError(''); setParseNotice(''); setParsing(true)
     setParseStage('正在连接云函数…'); setParseElapsed(0)
 
@@ -423,7 +475,7 @@ export function useUtaNote() {
       setParseStage(`正在解析 ${lineCount} 行歌词…`)
       const r = await parseLyrics(lyricsText)
       setParseStage('解析完成，正在生成卡片…')
-      const { song, songs: next } = addSong({ lyrics: lyricsText, sentences: r.sentences, title: songTitle.trim() || undefined })
+      const { song, songs: next } = addSong({ lyrics: lyricsText, sentences: r.sentences, title: songTitle.trim() || r.title || undefined })
       setSongs(next); setActiveSongId(song.id); setCardIndex(0)
       setActiveTab('study'); setStudyPhase('tasks')
       setSongTitle('')
@@ -493,17 +545,6 @@ export function useUtaNote() {
     onClick: () => openCard(i),
   }))
 
-  const weekDays = [
-    { label: '一', done: true }, { label: '二', done: true }, { label: '三', done: true },
-    { label: '四', done: true }, { label: '五', done: false }, { label: '六', done: false }, { label: '日', done: false },
-  ].map((d) => ({ label: d.label, bg: d.done ? '#6b70cf' : 'var(--ink-06)', mark: d.done ? '✓' : '' }))
-
-  const summaryStats = [
-    { value: '12 句', label: '本周新学句子', delta: '+8' },
-    { value: '38 个', label: '掌握词汇', delta: '+21' },
-    { value: '2h45m', label: '学习时长', delta: '+1.2h' },
-  ]
-
   const vocabAll = sentences.map((row, i) => {
     const mastery = activeSongId ? getMastery(masteryMap, activeSongId, i) : 'new'
     return {
@@ -544,10 +585,31 @@ export function useUtaNote() {
     learning: vocabAll.filter((v) => v.mastery === 'learning').length,
   }
 
+  // ── SUMMARY (current song) — real data only. The app has no time-series
+  // source (mastery is untimestamped; streak stores only last-day + count),
+  // so there are no "this week" deltas, study-minutes, or 7-day check-ins.
+  const masteredSentences = libraryStats.mastered
+  const studiedSentences = vocabAll.filter((v) => v.mastery !== 'new').length
+  const masteryProgressPct = total ? Math.round((masteredSentences / total) * 100) : 0
+  const summaryStats = [
+    { value: String(studiedSentences), label: '已学句子' },
+    { value: String(masteredSentences), label: '已掌握' },
+    { value: streakDays > 0 ? String(streakDays) : '—', label: '连续天数' },
+  ]
+  const shareTitle = activeSong && studiedSentences > 0
+    ? `我在 UtaNote 学会了《${activeSong.title}》的 ${studiedSentences} 句日语歌词！`
+    : '用日语歌学日语 · UtaNote'
+
   const detail = modalDetail || (current && current.detail) || {}
+  const exampleEgg = findEasterEgg(activeSongId, detail.word)
   const isFav = !!favorites[detail.word]
   const wordTtsId = currentTtsBaseId() + ':word:' + (detail.word || '')
   const exampleTtsId = currentTtsBaseId() + ':example'
+  // The word-detail 🔊 buttons are emoji — CSS `color` can't tint them, so the
+  // existing loading→color-change trick is invisible there. Surface loading
+  // as its own flag instead, and swap in a real spinner (see index.jsx).
+  const isWordTtsLoading = ttsLoadingId === wordTtsId
+  const isExampleTtsLoading = ttsLoadingId === exampleTtsId
 
   const tokenViews = ((current && current.tokens) || []).map((tok, i) => {
     const id = currentTtsBaseId() + ':token:' + i + ':' + (tok.text || '')
@@ -614,7 +676,9 @@ export function useUtaNote() {
     cardAnimClass: navDir === 'prev' ? 'card-in-prev' : 'card-in-next',
     romajiOpen,
     romajiToggleLabel: romajiOpen ? '收起假名/罗马音' : '显示假名/罗马音',
-    romajiArrowRotate: romajiOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+    // Base 45deg makes a border-right+border-bottom box read as a down chevron;
+    // +180deg flips it to point up when the panel is open.
+    romajiArrowRotate: romajiOpen ? 'rotate(225deg)' : 'rotate(45deg)',
     toggleRomaji, openWordModal, backToTasks, prevCard, nextCard,
     prevOpacity: safeIndex === 0 ? 0.4 : 1,
     nextLabel: safeIndex >= total - 1 ? '完成' : '下一句',
@@ -622,7 +686,9 @@ export function useUtaNote() {
     slowLabel, slowColor, ttsSlow, setTtsSlow, playWordTts, playExampleTts,
     wordPlayIconColor: ttsColorFor(wordTtsId),
     examplePlayIconColor: ttsColorFor(exampleTtsId),
-    weekDays, summaryStats, goHome,
+    isWordTtsLoading, isExampleTtsLoading,
+    exampleEgg, eggOpen, toggleEgg, eggFlash,
+    summaryStats, summaryStudied: studiedSentences, summaryTotal: total, summaryMastered: masteredSentences, masteryProgressPct, shareTitle, goHome,
     librarySearch, setSearch, libraryFilterChips, libraryStats, filteredVocab,
     mySongs, importedCount: songs.filter((s) => !s.demo).length,
     currentDetail: detail,
@@ -637,5 +703,16 @@ export function useUtaNote() {
     fontScale, fontScaleLabel, fontScaleOptions: FONT_SCALE_OPTIONS, setFontScaleAction,
     ttsVoice, ttsVoiceLabel, ttsVoiceOptions: TTS_VOICE_OPTIONS, setTtsVoice,
     openAbout, closeAbout,
+    navBarPaddingTop: navMetrics.navBarPaddingTop,
+    navBarHeight: navMetrics.navBarHeight,
+    navBarRightReserve: navMetrics.navBarRightReserve,
+    // CARD screen reserves the full fixed nav-bar band above its content;
+    // every other screen has no header row there, so it only needs to clear
+    // the capsule itself — a much shorter gap.
+    contentTopCard: navMetrics.navBarPaddingTop + navMetrics.navBarHeight + 8,
+    contentTopDefault: navMetrics.capsuleBottom + 6,
+    // Home's title sits left of the capsule (no horizontal overlap), so it
+    // can ride a bit higher than other screens for a bolder opening feel.
+    contentTopHome: navMetrics.capsuleBottom - 6,
   }
 }

@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
-import { View, Text, Textarea, Input, ScrollView } from '@tarojs/components'
+import { useShareAppMessage } from '@tarojs/taro'
+import { View, Text, Textarea, Input, ScrollView, Button, Image } from '@tarojs/components'
 import { useUtaNote } from '../../logic/useUtaNote'
 import { sx } from '../../logic/sx'
+import appLogo from '../../assets/app-logo.png'
 import './index.css'
 
 // Swipe tuning for the card screen (Douyin-style vertical flip):
@@ -36,6 +38,13 @@ const PLACEHOLDER = 'color: var(--ink-3)'
 
 export default function Index() {
   const v = useUtaNote()
+
+  // Enables WeChat forwarding (top-right menu + the summary's open-type=share
+  // button). Runtime-only — the actual card must be verified on a real device.
+  useShareAppMessage(() => ({
+    title: v.shareTitle,
+    path: '/pages/index/index',
+  }))
 
   // Live-tracking swipe for the card screen — dragY follows the finger
   // during the gesture (dragAnim off), then either snaps instantly (a
@@ -87,13 +96,13 @@ export default function Index() {
       })}
     >
       <ScrollView scrollY style={sx({ flex: 1, minHeight: 0, background: 'var(--bg)' })}>
-        <View style={sx({ minHeight: '100%', paddingTop: 88, paddingBottom: 8, background: 'var(--bg)' })}>
+        <View style={sx({ minHeight: '100%', paddingTop: (v.isCard || v.isAbout) ? v.contentTopCard : v.isHome ? v.contentTopHome : v.contentTopDefault, paddingBottom: 8, background: 'var(--bg)' })}>
 
           {/* ============ HOME ============ */}
           {v.isHome && (
             <View className="screen" style={sx({ padding: '4px 22px 28px', display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' })}>
               <View>
-                <Text style={sx({ fontFamily: '"Noto Serif SC", "Songti SC", "STSong", Georgia, serif', fontSize: 30, color: 'var(--text-heading)', letterSpacing: 1, fontWeight: 600 })}>UtaNote</Text>
+                <Text style={sx({ fontFamily: '"Noto Serif SC", "Songti SC", "STSong", Georgia, serif', fontSize: 34, color: 'var(--text-heading)', letterSpacing: 1, fontWeight: 600 })}>UtaNote</Text>
                 <View style={sx({ fontSize: 12.5, color: 'var(--ink-45)', marginTop: 4 })}>把一首日语歌拆成可学会的每一句</View>
               </View>
 
@@ -120,7 +129,7 @@ export default function Index() {
                 <Input
                   value={v.songTitle}
                   onInput={(e) => v.setSongTitle(e.detail.value)}
-                  placeholder="输入歌曲名称（可选，默认取首行歌词）"
+                  placeholder="输入歌曲名称（可选，留空由 AI 自动取名）"
                   placeholderStyle={PLACEHOLDER}
                   style={sx({ width: '100%', height: 42, boxSizing: 'border-box', background: 'var(--ink-04)', border: '1px solid var(--ink-08)', borderRadius: 14, padding: '0 14px', fontSize: 13.5, color: 'var(--text-body)', marginBottom: 10 })}
                 />
@@ -192,17 +201,6 @@ export default function Index() {
                 onTouchCancel={onCardTouchEnd}
                 style={sx({ display: 'flex', flexDirection: 'column', gap: 18, transform: `translateY(${dragY}px)`, transition: dragAnim ? 'transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none' })}
               >
-                <View style={sx({ display: 'flex', alignItems: 'center', gap: 10 })}>
-                  <View onClick={v.backToTasks} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 56, height: 56, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: -11 })}>
-                    <View style={sx({ width: 13, height: 13, borderLeft: '4px solid var(--ink-6)', borderBottom: '4px solid var(--ink-6)', transform: 'rotate(45deg)', marginLeft: 5 })} />
-                  </View>
-                  <View style={sx({ flex: 1, height: 4, borderRadius: 2, background: 'var(--ink-08)', overflow: 'hidden' })}>
-                    <View style={sx({ height: '100%', borderRadius: 2, background: 'var(--accent)', width: `${v.cardProgressPct}%`, transition: 'width 0.3s ease' })} />
-                  </View>
-                  <View style={sx({ fontSize: 12, color: 'var(--ink-45)', whiteSpace: 'nowrap' })}>{v.cardPositionLabel}</View>
-                  <View style={sx({ color: 'var(--ink-35)', fontSize: 15 })}>⋮</View>
-                </View>
-
                 {/* Keyed by card position: flipping/swiping 上一句/下一句 remounts this
                     block, replaying the direction-matched card-in slide. */}
                 <View key={v.cardPositionLabel} className={v.cardAnimClass} style={sx({ display: 'flex', flexDirection: 'column', gap: 18 })}>
@@ -213,7 +211,7 @@ export default function Index() {
                       <Text>🔊</Text><Text>{v.playLabel}</Text>
                     </View>
                     <View onClick={v.toggleSlow} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: v.slowColor, background: 'var(--ink-05)', border: '1px solid var(--ink-08)', borderRadius: 16, padding: '4px 9px' })}>
-                      <Text>🐢</Text><Text>{v.slowLabel}</Text>
+                      <Text style={sx({ lineHeight: 1, transform: 'translateY(-1.5px)' })}>🐢</Text><Text>{v.slowLabel}</Text>
                     </View>
                   </View>
                   <Text style={sx({ fontSize: 21, lineHeight: 1.6, color: 'var(--text-heading)', fontWeight: 600 })}>
@@ -240,7 +238,7 @@ export default function Index() {
 
                 <View onClick={v.toggleRomaji} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-45)', border: '1px solid var(--ink-1)', borderRadius: 20, padding: '6px 12px', width: 'fit-content' })}>
                   <Text>{v.romajiToggleLabel}</Text>
-                  <Text style={sx({ transform: v.romajiArrowRotate, transition: 'transform 0.25s ease' })}>⌄</Text>
+                  <View style={sx({ width: 6, height: 6, borderRight: '1.5px solid var(--ink-45)', borderBottom: '1.5px solid var(--ink-45)', transform: v.romajiArrowRotate, transition: 'transform 0.25s ease' })} />
                 </View>
 
                 {v.romajiOpen && (
@@ -279,46 +277,33 @@ export default function Index() {
 
               <View style={sx({ borderRadius: 16, padding: 18, background: 'linear-gradient(135deg, rgba(107,112,207,0.28), rgba(60,50,90,0.4))', border: '1px solid var(--ink-08)', position: 'relative', overflow: 'hidden' })}>
                 <View style={sx({ position: 'absolute', right: 14, top: 14, width: 34, height: 34, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, #f4f0e0, #d9d3b8)' })} />
-                <View style={sx({ fontSize: 13, color: 'var(--ink-7)' })}>你已学会</View>
-                <View style={sx({ fontSize: 20, fontWeight: 700, color: '#fff', marginTop: 4 })}>1 首歌的 12 句</View>
+                <View style={sx({ fontSize: 13, color: 'var(--ink-7)' })}>你已学习</View>
+                <View style={sx({ fontSize: 20, fontWeight: 700, color: '#fff', marginTop: 4 })}>《{v.activeSongTitle}》{v.summaryStudied}/{v.summaryTotal} 句</View>
                 <View style={sx({ fontSize: 12, color: 'var(--ink-55)', marginTop: 6 })}>继续保持，下一句会更动听 ✨</View>
-              </View>
-
-              <View>
-                <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 })}>
-                  <Text style={sx({ fontSize: 13, fontWeight: 600, color: 'var(--text-body)' })}>本周进度</Text>
-                  <Text style={sx({ fontSize: 11, color: 'var(--ink-35)' })}>5.12 - 5.18</Text>
-                </View>
-                <View style={sx({ display: 'flex', gap: 6 })}>
-                  {v.weekDays.map((day, i) => (
-                    <View key={i} style={sx({ flex: 1, textAlign: 'center' })}>
-                      <View style={sx({ fontSize: 10, color: 'var(--ink-35)', marginBottom: 5 })}>{day.label}</View>
-                      <View style={sx({ width: '100%', aspectRatio: '1 / 1', borderRadius: '50%', background: day.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff' })}>{day.mark}</View>
-                    </View>
-                  ))}
-                </View>
               </View>
 
               <View style={sx({ display: 'flex', gap: 8 })}>
                 {v.summaryStats.map((stat, i) => (
-                  <View key={i} style={sx({ flex: 1, padding: '12px 8px', borderRadius: 12, background: 'var(--ink-04)', border: '1px solid var(--ink-07)', textAlign: 'center' })}>
-                    <View style={sx({ fontSize: 16, fontWeight: 700, color: 'var(--text-strong)' })}>{stat.value}</View>
+                  <View key={i} style={sx({ flex: 1, padding: '14px 8px', borderRadius: 12, background: 'var(--ink-04)', border: '1px solid var(--ink-07)', textAlign: 'center' })}>
+                    <View style={sx({ fontSize: 18, fontWeight: 700, color: 'var(--text-strong)' })}>{stat.value}</View>
                     <View style={sx({ fontSize: 10.5, color: 'var(--ink-4)', marginTop: 3 })}>{stat.label}</View>
-                    <View style={sx({ fontSize: 9.5, color: 'var(--success)', marginTop: 2 })}>{stat.delta}</View>
                   </View>
                 ))}
               </View>
 
               <View>
                 <View style={sx({ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-5)', marginBottom: 6 })}>
-                  <Text>句子掌握进度</Text><Text>12 / 32</Text>
+                  <Text>句子掌握进度</Text><Text>{v.summaryMastered} / {v.summaryTotal}</Text>
                 </View>
                 <View style={sx({ height: 6, borderRadius: 3, background: 'var(--ink-08)', overflow: 'hidden' })}>
-                  <View style={sx({ height: '100%', width: '37%', background: 'linear-gradient(90deg, #6b70cf, #8489e0)', borderRadius: 3 })} />
+                  <View style={sx({ height: '100%', width: v.masteryProgressPct + '%', background: 'linear-gradient(90deg, #6b70cf, #8489e0)', borderRadius: 3 })} />
                 </View>
               </View>
 
-              <View onClick={v.goHome} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ textAlign: 'center', padding: 13, borderRadius: 14, background: 'var(--ink-06)', border: '1px solid var(--ink-1)', color: 'var(--text-body)', fontSize: 14, fontWeight: 600 })}>分享成就卡片 ⤴</View>
+              <View style={sx({ display: 'flex', flexDirection: 'column', gap: 10 })}>
+                <Button openType="share" className="tap plain-btn" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ textAlign: 'center', padding: 13, borderRadius: 14, background: 'linear-gradient(135deg, #6b70cf, #8489e0)', color: '#fff', fontSize: 14, fontWeight: 600 })}>分享给好友 ⤴</Button>
+                <View onClick={v.goHome} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ textAlign: 'center', padding: 12, borderRadius: 14, background: 'var(--ink-06)', border: '1px solid var(--ink-1)', color: 'var(--text-body)', fontSize: 14, fontWeight: 600 })}>完成</View>
+              </View>
             </View>
           )}
 
@@ -430,15 +415,8 @@ export default function Index() {
           {/* ============ ABOUT ============ */}
           {v.isAbout && (
             <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 18 })}>
-              <View style={sx({ display: 'flex', alignItems: 'center', gap: 10 })}>
-                <View onClick={v.closeAbout} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 56, height: 56, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: -11 })}>
-                  <View style={sx({ width: 13, height: 13, borderLeft: '4px solid var(--ink-6)', borderBottom: '4px solid var(--ink-6)', transform: 'rotate(45deg)', marginLeft: 5 })} />
-                </View>
-                <Text style={sx({ fontSize: 20, fontWeight: 700, color: 'var(--text-heading)' })}>关于</Text>
-              </View>
-
               <View style={sx({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' })}>
-                <View style={sx({ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#fff' })}>歌</View>
+                <Image src={appLogo} mode="aspectFill" style={sx({ width: 64, height: 64, borderRadius: 16 })} />
                 <Text style={sx({ fontFamily: '"Noto Serif SC", "Songti SC", Georgia, serif', fontSize: 24, color: 'var(--text-heading)', fontWeight: 600, letterSpacing: 1, marginTop: 4 })}>UtaNote</Text>
                 <View style={sx({ fontSize: 12, color: 'var(--ink-4)' })}>v0.1.0</View>
               </View>
@@ -489,6 +467,41 @@ export default function Index() {
 
         </View>
       </ScrollView>
+
+      {/* ============ CARD NAV BAR (fixed, aligned to the capsule button — see
+          useUtaNote's getNavMetrics for the vertical-centering math) ============ */}
+      {v.isCard && (
+        <View style={sx({
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 30, boxSizing: 'border-box',
+          paddingTop: v.navBarPaddingTop, height: v.navBarPaddingTop + v.navBarHeight,
+          paddingLeft: 22, paddingRight: v.navBarRightReserve,
+          display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-bar)',
+        })}>
+          <View onClick={v.backToTasks} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: -8 })}>
+            <View style={sx({ width: 11, height: 11, borderLeft: '3px solid var(--ink-6)', borderBottom: '3px solid var(--ink-6)', transform: 'rotate(45deg)', marginLeft: 4 })} />
+          </View>
+          <View style={sx({ flex: 1, height: 4, borderRadius: 2, background: 'var(--ink-08)', overflow: 'hidden' })}>
+            <View style={sx({ height: '100%', borderRadius: 2, background: 'var(--accent)', width: `${v.cardProgressPct}%`, transition: 'width 0.3s ease' })} />
+          </View>
+          <View style={sx({ fontSize: 12, color: 'var(--ink-45)', whiteSpace: 'nowrap' })}>{v.cardPositionLabel}</View>
+          <View style={sx({ color: 'var(--ink-35)', fontSize: 15 })}>⋮</View>
+        </View>
+      )}
+
+      {/* ============ ABOUT NAV BAR (same capsule-aligned fixed header) ============ */}
+      {v.isAbout && (
+        <View style={sx({
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 30, boxSizing: 'border-box',
+          paddingTop: v.navBarPaddingTop, height: v.navBarPaddingTop + v.navBarHeight,
+          paddingLeft: 22, paddingRight: v.navBarRightReserve,
+          display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-bar)',
+        })}>
+          <View onClick={v.closeAbout} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: -8 })}>
+            <View style={sx({ width: 11, height: 11, borderLeft: '3px solid var(--ink-6)', borderBottom: '3px solid var(--ink-6)', transform: 'rotate(45deg)', marginLeft: 4 })} />
+          </View>
+          <Text style={sx({ fontSize: 16, fontWeight: 700, color: 'var(--text-heading)' })}>关于</Text>
+        </View>
+      )}
 
       {/* ============ CARD ACTION BAR (docked to viewport bottom, like the tab bar) ============ */}
       {v.isCard && (
@@ -558,7 +571,11 @@ export default function Index() {
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                 <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
                   <View style={sx({ fontSize: 22, fontWeight: 700, color: 'var(--text-heading)' })}>{v.currentDetail.word}</View>
-                  <View onClick={v.playWordTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 14, color: v.wordPlayIconColor })}>🔊</View>
+                  {v.isWordTtsLoading ? (
+                    <View style={sx({ width: 12, height: 12, border: '2px solid var(--ink-15)', borderTopColor: 'var(--accent-light)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
+                  ) : (
+                    <View onClick={v.playWordTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 14, color: v.wordPlayIconColor })}>🔊</View>
+                  )}
                 </View>
                 <View style={sx({ display: 'flex', alignItems: 'center', gap: 10 })}>
                   <View style={sx({ fontSize: 11, color: v.currentMasteryColor, padding: '3px 8px', borderRadius: 10, background: 'var(--ink-05)' })}>{v.currentMasteryLabel}</View>
@@ -595,9 +612,28 @@ export default function Index() {
                 <View style={sx({ fontSize: 11, color: 'var(--ink-35)', marginBottom: 6 })}>例句</View>
                 <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
                   <View style={sx({ fontSize: 13.5, color: 'var(--text-body)' })}>{v.currentDetail.example ? v.currentDetail.example.jp : ''}</View>
-                  <View onClick={v.playExampleTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 12, color: v.examplePlayIconColor })}>🔊</View>
+                  {v.isExampleTtsLoading ? (
+                    <View style={sx({ width: 11, height: 11, border: '2px solid var(--ink-15)', borderTopColor: 'var(--accent-light)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
+                  ) : (
+                    <View onClick={v.playExampleTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 12, color: v.examplePlayIconColor })}>🔊</View>
+                  )}
                 </View>
                 <View style={sx({ fontSize: 12, color: 'var(--ink-4)', marginTop: 4 })}>{v.currentDetail.example ? v.currentDetail.example.cn : ''}</View>
+                {v.eggFlash ? (
+                  <View className="panel-in" style={sx({ fontSize: 11.5, color: 'var(--accent-light)', marginTop: 8 })}>{v.eggFlash}</View>
+                ) : null}
+                {v.exampleEgg ? (
+                  <View style={sx({ marginTop: 8 })}>
+                    <View onClick={v.toggleEgg} className="tap egg-hint" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 11.5, color: 'var(--accent-light)', width: 'fit-content' })}>✦ {v.eggOpen ? '收起彩蛋' : '轻触，好像藏了点什么'}</View>
+                    {v.eggOpen ? (
+                      <View className="panel-in" style={sx({ marginTop: 8, padding: '10px 12px', borderRadius: 12, background: 'rgba(132,137,224,0.12)', border: '1px solid rgba(165,168,236,0.3)' })}>
+                        {v.exampleEgg.jp ? <View style={sx({ fontSize: 13, color: 'var(--accent-light)', marginBottom: 5 })}>{v.exampleEgg.jp}</View> : null}
+                        <View style={sx({ fontSize: 12.5, color: 'var(--text-body)', lineHeight: 1.6 })}>{v.exampleEgg.cn}</View>
+                        {v.exampleEgg.note ? <View style={sx({ fontSize: 11, color: 'var(--ink-4)', marginTop: 8 })}>{v.exampleEgg.note}</View> : null}
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
             </View>
           </ScrollView>
