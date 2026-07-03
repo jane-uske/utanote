@@ -63,7 +63,7 @@ export default function Index() {
                   <Textarea
                     value={v.lyricsText}
                     onInput={(e) => v.setLyrics(e.detail.value)}
-                    maxlength={-1}
+                    maxlength={5000}
                     placeholder="粘贴或输入日文歌词（支持假名/汉字）"
                     placeholderStyle={PLACEHOLDER}
                     style={sx({ width: '100%', height: 150, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 14, fontSize: 13.5, color: '#eceaf3' })}

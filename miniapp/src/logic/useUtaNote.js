@@ -32,6 +32,9 @@ const FONT_SCALE_OPTIONS = [
 // Initialize font scale from storage before first render.
 initFontScale()
 
+// Must match MAX_CHARS in cloudfunctions/parse (and the Textarea maxlength).
+const MAX_LYRICS_CHARS = 5000
+
 const FAV_KEY = 'utanote.favorites'
 
 function loadFavorites() {
@@ -143,6 +146,16 @@ export function useUtaNote() {
 
   const startBreakdown = async () => {
     if (parsing) return
+    // Hard limits mirrored from the parse cloud function — reject locally so
+    // an invalid submit never spends a cloud call (or a daily-quota slot).
+    if (!lyricsText.trim()) {
+      setParseNotice(''); setParseError('没有可解析的歌词，请先粘贴或输入日文歌词。')
+      return
+    }
+    if (lyricsText.length > MAX_LYRICS_CHARS) {
+      setParseNotice(''); setParseError('歌词最多支持 5000 字，请删减后再试。')
+      return
+    }
     setParseError(''); setParseNotice(''); setParsing(true)
     setParseStage('正在连接云函数…'); setParseElapsed(0)
 

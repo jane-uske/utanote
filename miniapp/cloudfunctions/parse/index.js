@@ -23,13 +23,16 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-const DAILY_LIMIT = 20
+const DAILY_LIMIT = 5        // songs per openid per day
+const MAX_LINES = 40         // lines parsed per request
+const MAX_CHARS = 5000       // total chars per request
+const MAX_LINE_CHARS = 240   // chars per line (excess is cut)
+const CHUNK_SIZE = 8         // lines per LLM batch
+const MAX_CONCURRENCY = 4    // concurrent LLM batch requests
+const HTTP_TIMEOUT = 60000   // ms
 
 const DEFAULT_BASE = 'https://api.deepseek.com'
 const DEFAULT_MODEL = 'deepseek-chat'
-const MAX_LINES = 40
-const CHUNK_SIZE = 5   // lines per LLM batch — keeps output tokens small
-const HTTP_TIMEOUT = 45000 // ms — leave headroom for cold-start + merge
 
 const PARTICLES = new Set([
   'が', 'を', 'に', 'は', 'へ', 'で', 'と', 'も', 'の', 'や', 'か',
@@ -85,9 +88,19 @@ function splitLines(text) {
 function furiganaOf(tokens) {
   return tokens.map((t) => t.reading || t.text).join(' ')
 }
+// Particles keep their spoken reading, not the kana's literal romaji.
+function particleRomaji(surface) {
+  if (surface === 'は') return 'wa'
+  if (surface === 'を') return 'o'
+  if (surface === 'へ') return 'e'
+  return readingToRomaji(surface)
+}
 function romajiOf(tokens) {
   return tokens
-    .map((t) => readingToRomaji(t.reading || (t.type === 'content' ? '' : t.text)))
+    .map((t) => {
+      if (t.type === 'particle') return particleRomaji(t.text)
+      return readingToRomaji(t.reading || '')
+    })
     .filter(Boolean)
     .join(' ')
 }
@@ -250,14 +263,47 @@ function chunk(arr, size) {
   return out
 }
 
-// Call LLM in parallel batches; each batch covers CHUNK_SIZE lines.
+// Run `worker` over `items` with at most `limit` in flight at once.
+// Returns Promise.allSettled-shaped results, in input order.
+async function runWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length)
+  let nextIndex = 0
+
+  async function run() {
+    while (nextIndex < items.length) {
+      const current = nextIndex++
+      try {
+        results[current] = {
+          status: 'fulfilled',
+          value: await worker(items[current], current),
+        }
+      } catch (e) {
+        results[current] = {
+          status: 'rejected',
+          reason: e,
+        }
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, run)
+  )
+
+  return results
+}
+
+// Call LLM in batches of CHUNK_SIZE lines, at most MAX_CONCURRENCY in flight.
 // Returns { enriched: Array, warnings: string[] }.
-// - enriched[i] is the LLM result for line i, or null if its batch failed.
-// - Successful batches are kept even when others fail (partial enrichment).
+// - enriched[i] is the LLM result for line i, or null if unavailable.
+// - Every chunk contributes exactly chunk-length slots, so a batch that
+//   fails or returns a wrong count never shifts the lines after it.
 async function callLLMChunked({ baseURL, apiKey, model, lines }) {
   const chunks = chunk(lines, CHUNK_SIZE)
-  const results = await Promise.allSettled(
-    chunks.map((ch) => callLLM({ baseURL, apiKey, model, lines: ch }))
+  const results = await runWithConcurrency(
+    chunks,
+    MAX_CONCURRENCY,
+    (ch) => callLLM({ baseURL, apiKey, model, lines: ch })
   )
   const enriched = []
   const warnings = []
@@ -265,12 +311,17 @@ async function callLLMChunked({ baseURL, apiKey, model, lines }) {
   for (let ci = 0; ci < results.length; ci++) {
     const r = results[ci]
     if (r.status === 'fulfilled') {
-      enriched.push(...(r.value.sentences || []))
+      const arr = Array.isArray(r.value.sentences) ? r.value.sentences : []
+      if (arr.length !== chunks[ci].length) {
+        warnings.push(`批次 ${ci + 1}/${chunks.length} 返回数量异常，已自动对齐`)
+      }
+      for (let j = 0; j < chunks[ci].length; j++) {
+        enriched.push(arr[j] || null)
+      }
       totalUsage.prompt_tokens += r.value.usage.prompt_tokens
       totalUsage.completion_tokens += r.value.usage.completion_tokens
       totalUsage.total_tokens += r.value.usage.total_tokens
     } else {
-      // Fill this chunk's slots with nulls so indices stay aligned.
       const errMsg = (r.reason && r.reason.message) || String(r.reason)
       warnings.push(`批次 ${ci + 1}/${chunks.length} 失败: ${errMsg}`)
       for (let j = 0; j < chunks[ci].length; j++) enriched.push(null)
@@ -296,7 +347,7 @@ exports.main = async (event = {}) => {
         .where({ openid: OPENID, createdAt: _.gte(today) })
         .count()
       if (total >= DAILY_LIMIT) {
-        return { ok: false, error: `今日解析次数已达上限（${DAILY_LIMIT}次/天），明天再来吧~` }
+        return { ok: false, error: `今日解析次数已达上限（${DAILY_LIMIT}首/天），明天再来吧。` }
       }
     } catch (e) {
       console.warn('rate limit check failed:', e)
@@ -304,13 +355,19 @@ exports.main = async (event = {}) => {
     }
   }
 
-  // ── Parse ──────────────────────────────────────────────────────
-  const lyrics = event.lyrics || ''
+  // ── Input limits (server-side, so oversized payloads never reach the LLM) ──
+  const rawLyrics = String(event.lyrics || '')
+  if (!rawLyrics.trim()) return { ok: false, error: '没有可解析的歌词。' }
+  if (rawLyrics.length > MAX_CHARS) {
+    return { ok: false, error: `歌词过长，最多支持 ${MAX_CHARS} 字。` }
+  }
+
   const apiKey = (process.env.DEEPSEEK_KEY || '').trim()
   const baseURL = (process.env.DEEPSEEK_BASE || DEFAULT_BASE).trim()
   const model = (process.env.DEEPSEEK_MODEL || DEFAULT_MODEL).trim()
 
-  const all = splitLines(lyrics)
+  // splitLines trims each line and drops empties; then cap line length + count.
+  const all = splitLines(rawLyrics).map((l) => l.slice(0, MAX_LINE_CHARS))
   if (all.length === 0) return { ok: false, error: '没有可解析的歌词。' }
   const truncated = all.length > MAX_LINES
   const lines = all.slice(0, MAX_LINES)

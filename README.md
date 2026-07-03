@@ -94,13 +94,23 @@ utanote/
     ├─ wx.cloud.callFunction('login') ──▶ 获取 openId，写入 users 集合
     │                                   │
     └─ wx.cloud.callFunction('parse') ──▶ 分词 + DeepSeek API
-                                        ├─ 频率限制（20次/天/用户）
+                                        ├─ 频率限制（5首/天/用户）
                                         ├─ Token 用量统计
                                         └─ 日志写入 parse_logs 集合
 ```
 
-- API Key 存储在云函数环境变量中，**不下发到客户端**
+- API Key 只配置在云函数环境变量 `DEEPSEEK_KEY` 中，**小程序端不可见**
 - `wx.cloud.callFunction` 走微信云通道，**无需配置域名白名单**
+
+### 解析限制（发布版）
+
+| 限制项 | 值 |
+|---|---|
+| 每用户每日解析 | **5 首歌**（按 openid 计） |
+| 单次歌词总长 | **5000 字**（前端 Textarea 与云函数双重限制） |
+| 单次解析行数 | **前 40 行**（超出部分截断） |
+| 单行长度 | 240 字（超过裁剪） |
+| LLM 分批 | 每批 `CHUNK_SIZE=8` 行，最大并发 `MAX_CONCURRENCY=4`，分批请求 DeepSeek |
 
 ## 🚀 快速开始
 
