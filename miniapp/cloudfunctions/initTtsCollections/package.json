@@ -1,0 +1,9 @@
+{
+  "name": "init-tts-collections",
+  "version": "1.0.0",
+  "description": "一次性 bootstrap：幂等创建 TTS 所需的 6 个数据库集合",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
