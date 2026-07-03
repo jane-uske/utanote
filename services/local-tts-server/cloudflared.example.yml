@@ -1,0 +1,4 @@
+ingress:
+  - hostname: tts.example.com
+    service: http://localhost:8787
+  - service: http_status:404
