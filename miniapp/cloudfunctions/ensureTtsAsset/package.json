@@ -1,0 +1,9 @@
+{
+  "name": "ensure-tts-asset",
+  "version": "1.0.0",
+  "description": "Compatibility alias for UtaNote TTS asset generation",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
