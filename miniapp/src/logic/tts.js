@@ -12,12 +12,6 @@ function normalizeText(text) {
   return normalized.replace(/[风]/g, (char) => JP_ORTHOGRAPHY_REPLACEMENTS[char] || char)
 }
 
-function normalizeSpeedScale(value) {
-  const n = Number(value == null ? 0.9 : value)
-  if (!Number.isFinite(n)) return 0.9
-  return Math.max(0.5, Math.min(1.5, Math.round(n * 100) / 100))
-}
-
 function stableHash(value) {
   const source = String(value || '')
   let hash = 5381
@@ -61,15 +55,13 @@ function fileExists(path) {
 }
 
 export function buildTtsLocalCacheKey(data) {
-  // Local playback cache mirrors the cloud global cache: the same text/voice/speed
-  // should reuse one saved audio file no matter which song or line triggered it.
   const source = JSON.stringify({
     text: normalizeText(data && (data.audioText || data.text)),
     voice: (data && data.voice) || 'voicevox_default_female',
     speaker: data && data.speaker,
-    speedScale: normalizeSpeedScale(data && data.speedScale),
-    pitchScale: data && data.pitchScale == null ? 0 : data.pitchScale,
-    intonationScale: data && data.intonationScale == null ? 1 : data.intonationScale,
+    speedScale: data && data.speedScale,
+    pitchScale: data && data.pitchScale,
+    intonationScale: data && data.intonationScale,
     engineVersion: LOCAL_ENGINE_VERSION,
   })
   return 'tts:' + stableHash(source)
@@ -108,6 +100,12 @@ async function saveTtsAudioToDevice(cacheKey, tempFilePath, fileID) {
   }
 }
 
+function normalizeCloudError(r) {
+  const err = new Error((r && (r.error || r.message)) || '语音生成失败，请稍后再试')
+  err.code = r && r.code
+  return err
+}
+
 export async function generateLineTts(data) {
   let res
   try {
@@ -119,12 +117,7 @@ export async function generateLineTts(data) {
     throw new Error('云函数调用失败：' + (e.errMsg || e.message || e))
   }
   const r = res && res.result
-  if (!r || !r.ok) {
-    const err = new Error((r && (r.error || r.message)) || '语音生成失败，请稍后再试')
-    err.code = r && r.code
-    err.result = r
-    throw err
-  }
+  if (!r || !r.ok) throw normalizeCloudError(r)
   return r
 }
 
