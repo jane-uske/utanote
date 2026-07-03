@@ -1,0 +1,6 @@
+sentence_normal
+sentence_slow
+chunk
+word
+example
+custom_text
