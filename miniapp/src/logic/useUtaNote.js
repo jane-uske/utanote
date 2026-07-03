@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import Taro from '@tarojs/taro'
 import { sampleLyrics } from '../data'
 import { loadSongs, addSong, deleteSong, loadMastery, getMastery, setMastery } from './library'
+import { currentStreak, recordStudy } from './streak'
 import { parseLyrics } from './parse'
 import { initFontScale, getFontScale, setFontScale as _setFontScale } from './sx'
 
@@ -52,7 +53,9 @@ export function useUtaNote() {
   const [studyPhase, setStudyPhase] = useState('tasks')
   const [cardIndex, setCardIndex] = useState(0)
   const [showModal, setShowModal] = useState(false)
+  const [modalClosing, setModalClosing] = useState(false)
   const [modalDetail, setModalDetail] = useState(null)
+  const [streakDays, setStreakDays] = useState(() => currentStreak())
   const [romajiOpen, setRomajiOpen] = useState(false)
   const [favorites, setFavorites] = useState(() => loadFavorites())
   const [lyricsText, setLyricsText] = useState('')
@@ -73,6 +76,7 @@ export function useUtaNote() {
   const [parseNotice, setParseNotice] = useState('')
   const playRef = useRef(null)
   const parseTimerRef = useRef(null)
+  const modalTimerRef = useRef(null)
 
   const activeSong = songs.find((s) => s.id === activeSongId) || songs[0]
   const sentences = activeSong ? activeSong.sentences : []
@@ -86,6 +90,7 @@ export function useUtaNote() {
   const openCard = (i) => {
     setActiveTab('study'); setStudyPhase('card'); setCardIndex(i)
     setRomajiOpen(false); setShowModal(false)
+    setStreakDays(recordStudy())
     // Auto-promote "new" → "learning" when the card is first viewed.
     if (activeSongId && getMastery(masteryMap, activeSongId, i) === 'new') {
       setMasteryMap((m) => setMastery(m, activeSongId, i, 'learning'))
@@ -103,8 +108,19 @@ export function useUtaNote() {
     setCardIndex(safeIndex + 1); setRomajiOpen(false); setShowModal(false)
   }
   const toggleRomaji = () => setRomajiOpen((v) => !v)
-  const openWordModal = (detail) => { setModalDetail(detail); setShowModal(true) }
-  const closeWordModal = () => setShowModal(false)
+  const openWordModal = (detail) => {
+    if (modalTimerRef.current) clearTimeout(modalTimerRef.current)
+    setModalClosing(false); setModalDetail(detail); setShowModal(true)
+  }
+  // Play the sheet's exit animation, then unmount (duration matches
+  // .modal-sheet.closing in index.css).
+  const closeWordModal = () => {
+    if (!showModal || modalClosing) return
+    setModalClosing(true)
+    modalTimerRef.current = setTimeout(() => {
+      setShowModal(false); setModalClosing(false)
+    }, 240)
+  }
   const setLyrics = (text) => setLyricsText(text)
   const setSearch = (text) => setLibrarySearch(text)
   const toggleFavorite = () => {
@@ -174,6 +190,7 @@ export function useUtaNote() {
       setSongs(next); setActiveSongId(song.id); setCardIndex(0)
       setActiveTab('study'); setStudyPhase('tasks')
       setSongTitle('')
+      setStreakDays(recordStudy())
       if (r.warning) setParseNotice(r.warning)
       else if (r.source === 'local') setParseNotice('未配置 AI 解析，已生成本地分词草稿（读音/释义为占位）。在云函数配置 DEEPSEEK_KEY 后可自动生成完整内容。')
       else if (r.truncated) setParseNotice('歌词较长，本次仅解析了前 40 行。')
@@ -208,11 +225,15 @@ export function useUtaNote() {
     { key: 'study', label: '学习', icon: '♪' },
     { key: 'library', label: '词库', icon: '▤' },
     { key: 'me', label: '我的', icon: '◯' },
-  ].map((t) => ({
-    ...t,
-    color: activeTab === t.key && !aboutOpen ? '#a5a8ec' : 'rgba(255,255,255,0.4)',
-    onClick: () => { setAboutOpen(false); setTab(t.key) },
-  }))
+  ].map((t) => {
+    const active = activeTab === t.key && !aboutOpen
+    return {
+      ...t,
+      active,
+      color: active ? '#a5a8ec' : 'rgba(255,255,255,0.4)',
+      onClick: () => { setAboutOpen(false); setTab(t.key) },
+    }
+  })
 
   const taskRows = sentences.map((row, i) => ({
     key: row.label + '-' + i,
@@ -314,8 +335,11 @@ export function useUtaNote() {
   }
   const fontScaleLabel = (FONT_SCALE_OPTIONS.find((o) => o.key === fontScale) || FONT_SCALE_OPTIONS[1]).label
 
+  const streakLabel = streakDays > 0 ? `连续学习 ${streakDays} 天 🔥` : '今天开始学习吧 ✨'
+
   return {
-    isHome, isTasks, isCard, isSummary, isLibrary, isMe, isAbout, showTabBar, showModal,
+    isHome, isTasks, isCard, isSummary, isLibrary, isMe, isAbout, showTabBar, showModal, modalClosing,
+    streakDays, streakLabel,
     lyricsText, lyricsCount: lyricsText.length, setLyrics, fillSample, startBreakdown,
     songTitle, setSongTitle,
     parsing, parseStage, parseElapsed, parseError, parseNotice, dismissParseError, dismissParseNotice,

@@ -41,7 +41,7 @@ export default function Index() {
 
           {/* ============ HOME ============ */}
           {v.isHome && (
-            <View style={sx({ padding: '4px 22px 28px', display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' })}>
+            <View className="screen" style={sx({ padding: '4px 22px 28px', display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' })}>
               <View>
                 <Text style={sx({ fontFamily: '"Noto Serif SC", "Songti SC", "STSong", Georgia, serif', fontSize: 30, color: '#f5f4fa', letterSpacing: 1, fontWeight: 600 })}>UtaNote</Text>
                 <View style={sx({ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 4 })}>把一首日语歌拆成可学会的每一句</View>
@@ -84,7 +84,7 @@ export default function Index() {
               {v.parseError ? <View onClick={v.dismissParseError} style={sx(errBanner)}>{v.parseError}（点击关闭）</View> : null}
               {v.parseNotice ? <View onClick={v.dismissParseNotice} style={sx(noticeBanner)}>{v.parseNotice}（点击关闭）</View> : null}
 
-              <View onClick={v.parsing ? undefined : v.startBreakdown} style={sx({ ...primaryBtn, opacity: v.parsing ? 0.6 : 1 })}>
+              <View onClick={v.parsing ? undefined : v.startBreakdown} className="tap" hoverClass="press" style={sx({ ...primaryBtn, opacity: v.parsing ? 0.6 : 1 })}>
                 {v.parsing ? '解析中…' : '开始拆解 ✨'}
               </View>
             </View>
@@ -92,7 +92,7 @@ export default function Index() {
 
           {/* ============ TASKS ============ */}
           {v.isTasks && (
-            <View style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
+            <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                 <View>
                   <Text style={sx({ fontSize: 22, fontWeight: 700, color: '#f5f4fa' })}>今日任务</Text>
@@ -109,7 +109,7 @@ export default function Index() {
 
               <View style={sx({ display: 'flex', flexDirection: 'column', gap: 9 })}>
                 {v.taskRows.map((row) => (
-                  <View key={row.key} onClick={row.onClick} style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: `1px solid ${row.borderColor}` })}>
+                  <View key={row.key} onClick={row.onClick} className="tap" hoverClass="press" style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: `1px solid ${row.borderColor}` })}>
                     <View style={sx({ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'rgba(255,255,255,0.5)', flexShrink: 0 })}>{row.label}</View>
                     <View style={sx({ flex: 1, fontSize: 13.5, color: '#eceaf3' })}>{row.text}</View>
                     <View style={sx({ fontSize: 10.5, padding: '3px 8px', borderRadius: 20, background: row.badgeBg, color: row.badgeColor, flexShrink: 0 })}>{row.status}</View>
@@ -118,22 +118,25 @@ export default function Index() {
                 ))}
               </View>
 
-              <View onClick={v.startPractice} style={sx(primaryBtn)}>开始今天的练习 ▶</View>
+              <View onClick={v.startPractice} className="tap" hoverClass="press" style={sx(primaryBtn)}>开始今天的练习 ▶</View>
             </View>
           )}
 
           {/* ============ CARD ============ */}
           {v.isCard && (
-            <View style={sx({ padding: '2px 22px 20px', display: 'flex', flexDirection: 'column', gap: 18 })}>
+            <View className="screen" style={sx({ padding: '2px 22px 20px', display: 'flex', flexDirection: 'column', gap: 18 })}>
               <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                <View onClick={v.backToTasks} style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
+                <View onClick={v.backToTasks} className="tap" hoverClass="press" style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
                 <View style={sx({ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' })}>
-                  <View style={sx({ height: '100%', borderRadius: 2, background: '#8489e0', width: `${v.cardProgressPct}%` })} />
+                  <View style={sx({ height: '100%', borderRadius: 2, background: '#8489e0', width: `${v.cardProgressPct}%`, transition: 'width 0.3s ease' })} />
                 </View>
                 <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' })}>{v.cardPositionLabel}</View>
                 <View style={sx({ color: 'rgba(255,255,255,0.35)', fontSize: 15 })}>⋮</View>
               </View>
 
+              {/* Keyed by card position: flipping 上一句/下一句 remounts this block,
+                  replaying the card-in slide. Header/nav stay mounted. */}
+              <View key={v.cardPositionLabel} className="card-in" style={sx({ display: 'flex', flexDirection: 'column', gap: 18 })}>
               <View>
                 <View style={sx({ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 })}>
                   <View style={sx({ fontSize: 13, color: 'rgba(255,255,255,0.45)' })}>今日第 {v.currentSentence.num} 句</View>
@@ -161,13 +164,13 @@ export default function Index() {
                 </View>
               </View>
 
-              <View onClick={v.toggleRomaji} style={sx({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 12px', width: 'fit-content' })}>
+              <View onClick={v.toggleRomaji} className="tap" hoverClass="press" style={sx({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 12px', width: 'fit-content' })}>
                 <Text>{v.romajiToggleLabel}</Text>
-                <Text style={sx({ transform: v.romajiArrowRotate })}>⌄</Text>
+                <Text style={sx({ transform: v.romajiArrowRotate, transition: 'transform 0.25s ease' })}>⌄</Text>
               </View>
 
               {v.romajiOpen && (
-                <View style={sx({ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)' })}>
+                <View className="panel-in" style={sx({ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)' })}>
                   <View style={sx({ fontSize: 13, color: '#cfcde8' })}>{v.currentSentence.furigana}</View>
                   <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' })}>{v.currentSentence.romaji}</View>
                 </View>
@@ -186,11 +189,12 @@ export default function Index() {
                   </View>
                 ))}
               </View>
+              </View>
 
               <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 8 })}>
-                <View onClick={v.prevCard} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13, opacity: v.prevOpacity })}>‹ 上一句</View>
-                <View onClick={v.togglePlay} style={sx({ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff', boxShadow: '0 6px 16px rgba(107,112,207,0.4)' })}>{v.playGlyph}</View>
-                <View onClick={v.nextCard} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13 })}>{v.nextLabel} ›</View>
+                <View onClick={v.prevCard} className="tap" hoverClass="press" style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13, opacity: v.prevOpacity })}>‹ 上一句</View>
+                <View onClick={v.togglePlay} className="tap" hoverClass="press" style={sx({ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff', boxShadow: '0 6px 16px rgba(107,112,207,0.4)' })}>{v.playGlyph}</View>
+                <View onClick={v.nextCard} className="tap" hoverClass="press" style={sx({ padding: '12px 20px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', fontSize: 13 })}>{v.nextLabel} ›</View>
               </View>
 
               <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 })}>
@@ -204,7 +208,7 @@ export default function Index() {
 
           {/* ============ SUMMARY ============ */}
           {v.isSummary && (
-            <View style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
+            <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
               <Text style={sx({ fontSize: 22, fontWeight: 700, color: '#f5f4fa' })}>学习总结</Text>
 
               <View style={sx({ borderRadius: 16, padding: 18, background: 'linear-gradient(135deg, rgba(107,112,207,0.28), rgba(60,50,90,0.4))', border: '1px solid rgba(255,255,255,0.08)', position: 'relative', overflow: 'hidden' })}>
@@ -248,13 +252,13 @@ export default function Index() {
                 </View>
               </View>
 
-              <View onClick={v.goHome} style={sx({ textAlign: 'center', padding: 13, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#eceaf3', fontSize: 14, fontWeight: 600 })}>分享成就卡片 ⤴</View>
+              <View onClick={v.goHome} className="tap" hoverClass="press" style={sx({ textAlign: 'center', padding: 13, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#eceaf3', fontSize: 14, fontWeight: 600 })}>分享成就卡片 ⤴</View>
             </View>
           )}
 
           {/* ============ LIBRARY ============ */}
           {v.isLibrary && (
-            <View style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
+            <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
               <Text style={sx({ fontSize: 22, fontWeight: 700, color: '#f5f4fa' })}>词库</Text>
 
               <Input
@@ -281,7 +285,7 @@ export default function Index() {
 
               <View style={sx({ display: 'flex', flexDirection: 'column', gap: 9 })}>
                 {v.filteredVocab.map((vv) => (
-                  <View key={vv.key} onClick={vv.onClick} style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
+                  <View key={vv.key} onClick={vv.onClick} className="tap" hoverClass="press" style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
                     <View style={sx({ flex: 1 })}>
                       <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
                         <View style={sx({ fontSize: 15, fontWeight: 600, color: '#f0f0f5' })}>{vv.word}</View>
@@ -298,12 +302,12 @@ export default function Index() {
 
           {/* ============ ME ============ */}
           {v.isMe && (
-            <View style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
+            <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 16 })}>
               <View style={sx({ display: 'flex', alignItems: 'center', gap: 14 })}>
-                <View style={sx({ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#fff', flexShrink: 0 })}>学</View>
+                <View style={sx({ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: 1, flexShrink: 0 })}>うた</View>
                 <View>
                   <View style={sx({ fontSize: 17, fontWeight: 700, color: '#f5f4fa' })}>日语学习者</View>
-                  <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 })}>连续学习 4 天 🔥</View>
+                  <View style={sx({ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 })}>{v.streakLabel}</View>
                 </View>
               </View>
 
@@ -311,7 +315,7 @@ export default function Index() {
                 <View style={sx({ fontSize: 13, fontWeight: 600, color: '#eceaf3', marginBottom: 8 })}>我的歌曲</View>
                 <View style={sx({ display: 'flex', flexDirection: 'column', gap: 9 })}>
                   {v.mySongs.map((song) => (
-                    <View key={song.key} onClick={song.onClick} style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
+                    <View key={song.key} onClick={song.onClick} className="tap" hoverClass="press" style={sx({ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 13, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' })}>
                       <View style={sx({ width: 40, height: 40, borderRadius: 10, background: song.avatarBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: 'rgba(255,255,255,0.85)', flexShrink: 0 })}>{song.avatarChar}</View>
                       <View style={sx({ flex: 1, minWidth: 0 })}>
                         <View style={sx({ fontSize: 13.5, color: '#f0f0f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{song.title}</View>
@@ -348,9 +352,9 @@ export default function Index() {
 
           {/* ============ ABOUT ============ */}
           {v.isAbout && (
-            <View style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 18 })}>
+            <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 18 })}>
               <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                <View onClick={v.closeAbout} style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
+                <View onClick={v.closeAbout} className="tap" hoverClass="press" style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
                 <Text style={sx({ fontSize: 20, fontWeight: 700, color: '#f5f4fa' })}>关于</Text>
               </View>
 
@@ -411,8 +415,8 @@ export default function Index() {
       {v.showTabBar && (
         <View style={sx({ display: 'flex', padding: '10px 8px 26px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(13,17,32,0.95)' })}>
           {v.tabs.map((tab) => (
-            <View key={tab.key} onClick={tab.onClick} style={sx({ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: tab.color })}>
-              <View style={sx({ fontSize: 17 })}>{tab.icon}</View>
+            <View key={tab.key} onClick={tab.onClick} style={sx({ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: tab.color, transition: 'color 0.2s ease' })}>
+              <View style={sx({ fontSize: 17, transform: tab.active ? 'scale(1.18) translateY(-1px)' : 'scale(1)', transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' })}>{tab.icon}</View>
               <View style={sx({ fontSize: 10 })}>{tab.label}</View>
             </View>
           ))}
@@ -442,12 +446,12 @@ export default function Index() {
 
       {/* ============ WORD MODAL ============ */}
       {v.showModal && (
-        <View onClick={v.closeWordModal} style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40, display: 'flex', alignItems: 'flex-end' })}>
-          <ScrollView scrollY catchMove onClick={(e) => e.stopPropagation()} style={sx({ width: '100%', maxHeight: '78%', background: '#161a2c', borderRadius: '22px 22px 0 0', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' })}>
-            <View style={sx({ padding: '18px 20px 26px', display: 'flex', flexDirection: 'column', gap: 14 })}>
+        <View onClick={v.closeWordModal} className={'modal-mask' + (v.modalClosing ? ' closing' : '')} style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40, display: 'flex', alignItems: 'flex-end' })}>
+          <ScrollView scrollY catchMove onClick={(e) => e.stopPropagation()} className={'modal-sheet' + (v.modalClosing ? ' closing' : '')} style={sx({ width: '100%', maxHeight: '78%', background: '#161a2c', borderRadius: '22px 22px 0 0', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' })}>
+            <View style={sx({ padding: '14px 20px 26px', display: 'flex', flexDirection: 'column', gap: 14 })}>
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                 <View style={sx({ fontSize: 13, color: 'rgba(255,255,255,0.4)' })}>词语详情</View>
-                <View onClick={v.closeWordModal} style={sx({ fontSize: 16, color: 'rgba(255,255,255,0.5)' })}>✕</View>
+                <View onClick={v.closeWordModal} className="tap" hoverClass="press" style={sx({ width: 36, height: 36, marginRight: -8, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: 'rgba(255,255,255,0.65)', flexShrink: 0 })}>✕</View>
               </View>
 
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
