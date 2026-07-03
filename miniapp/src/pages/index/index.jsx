@@ -94,7 +94,22 @@ export default function Index() {
             <View className="screen" style={sx({ padding: '4px 22px 28px', display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' })}>
               <View>
                 <Text style={sx({ fontFamily: '"Noto Serif SC", "Songti SC", "STSong", Georgia, serif', fontSize: 30, color: 'var(--text-heading)', letterSpacing: 1, fontWeight: 600 })}>UtaNote</Text>
-                <View style={sx({ fontSize: 14.5, color: 'var(--ink-45)', marginTop: 4 })}>把一首日语歌拆成可学会的每一句。通过 AI 解析歌词，为每句生成注音、翻译、语法讲解和词汇卡片，让你在喜欢的音乐中自然习得日语</View>
+                <View style={sx({ fontSize: 12.5, color: 'var(--ink-45)', marginTop: 4 })}>把一首日语歌拆成可学会的每一句</View>
+              </View>
+
+              <View style={sx({ display: 'flex', flexWrap: 'wrap', gap: 8 })}>
+                {[
+                  { icon: '🤖', title: 'AI 秒速拆解', desc: '粘贴歌词自动拆成逐句学习卡片' },
+                  { icon: '🔊', title: '真人语音跟读', desc: 'AI 配音朗读，地道发音张口就来' },
+                  { icon: '🈶', title: '逐词语法拆解', desc: '主语/助词/谓语高亮，语感看得见' },
+                  { icon: '📚', title: '生词自动入库', desc: '点词收藏，掌握度进度全追踪' },
+                ].map((f) => (
+                  <View key={f.title} style={sx({ width: 'calc(50% - 4px)', boxSizing: 'border-box', padding: '12px 12px 13px', borderRadius: 14, background: 'var(--ink-04)', border: '1px solid var(--ink-08)', display: 'flex', flexDirection: 'column', gap: 3 })}>
+                    <View style={sx({ fontSize: 17 })}>{f.icon}</View>
+                    <View style={sx({ fontSize: 12.5, fontWeight: 600, color: 'var(--text-strong)' })}>{f.title}</View>
+                    <View style={sx({ fontSize: 10.5, color: 'var(--ink-5)', lineHeight: 1.4 })}>{f.desc}</View>
+                  </View>
+                ))}
               </View>
 
               <View>
