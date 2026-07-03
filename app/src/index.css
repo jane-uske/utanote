@@ -1,0 +1,22 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+/* Hide scrollbars inside the device frame while keeping scroll behaviour */
+.dc-scroll {
+  scrollbar-width: none;
+}
+.dc-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+textarea,
+input {
+  font-family: 'Noto Sans SC', sans-serif;
+}

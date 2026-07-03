@@ -1,0 +1,30 @@
+{
+  "name": "utanote-miniapp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "UtaNote 日语歌词学习 · 微信小程序（Taro + 云开发）",
+  "scripts": {
+    "build:weapp": "taro build --type weapp",
+    "dev:weapp": "taro build --type weapp --watch",
+    "build:h5": "taro build --type h5",
+    "dev:h5": "taro build --type h5 --watch"
+  },
+  "dependencies": {
+    "@tarojs/components": "3.6.34",
+    "@tarojs/plugin-framework-react": "3.6.34",
+    "@tarojs/plugin-platform-weapp": "3.6.34",
+    "@tarojs/react": "3.6.34",
+    "@tarojs/runtime": "3.6.34",
+    "@tarojs/shared": "3.6.34",
+    "@tarojs/taro": "3.6.34",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@tarojs/cli": "3.6.34",
+    "@tarojs/webpack5-runner": "3.6.34",
+    "babel-preset-taro": "3.6.34",
+    "webpack": "5.91.0"
+  }
+}

@@ -1,0 +1,126 @@
+// Static demo lesson data — the curated 《月灯りのメロディー》 song.
+// Shared shape with cloud-function output.
+
+export const sentences = [
+  {
+    num: 1, label: '01', status: '新学',
+    original: '夜风が静かに 窓をたたく',
+    highlightWord: '静かに',
+    furigana: 'よかぜ が しずかに まどを たたく',
+    romaji: 'yokaze ga shizuka ni mado o tataku',
+    translation: '夜风轻轻地敲打着窗户。',
+    structure: '主语 + が + 状语 + 宾语 + を + 谓语',
+    tokens: [
+      { text: '夜风', reading: 'よかぜ', role: '主语：夜风', type: 'content' },
+      { text: 'が', reading: '', role: '主格助词', type: 'particle' },
+      { text: '静かに', reading: 'しずかに', role: '状语：静静地', type: 'content' },
+      { text: '窓', reading: 'まど', role: '宾语：窗户', type: 'content' },
+      { text: 'を', reading: '', role: '宾格助词', type: 'particle' },
+      { text: 'たたく', reading: '', role: '谓语：敲打', type: 'content' },
+    ],
+    tips: [
+      { main: 'が [ga]', label: '轻音' },
+      { main: 'っ [促音]', label: '短促停顿' },
+      { main: 'たたく', label: '重音在前' },
+    ],
+    detail: {
+      word: '静かに', kana: 'しずかに', romaji: 'shizuka ni', pos: '副词',
+      meaning: '安静地；静静地',
+      grammar: '由「静か（な）」的词干「静か」+ 助词「に」构成，表示"以……的方式"。',
+      formula: '静か（な） + に → 静かに',
+      tags: ['副词', '助词「に」', '方式状语'],
+      example: { jp: '図書館で静かに勉強する。', cn: '在图书馆里安静地学习。' },
+    },
+  },
+  {
+    num: 2, label: '02', status: '新学',
+    original: '遠くの街で 君を想う',
+    highlightWord: '想う',
+    furigana: 'とおくの まちで きみを おもう',
+    romaji: 'tooku no machi de kimi o omou',
+    translation: '在遥远的城市想念着你。',
+    structure: '地点状语 + で + 宾语 + を + 谓语',
+    tokens: [
+      { text: '遠くの街', reading: 'とおくのまち', role: '地点：遥远的城市', type: 'content' },
+      { text: 'で', reading: '', role: '场所助词', type: 'particle' },
+      { text: '君', reading: 'きみ', role: '宾语：你', type: 'content' },
+      { text: 'を', reading: '', role: '宾格助词', type: 'particle' },
+      { text: '想う', reading: 'おもう', role: '谓语：思念', type: 'content' },
+    ],
+    tips: [
+      { main: 'で [de]', label: '表示地点' },
+      { main: 'を [o]', label: '助词提示' },
+      { main: '想う', label: '长音注意' },
+    ],
+    detail: {
+      word: '想う', kana: 'おもう', romaji: 'omou', pos: '动词（他动词）',
+      meaning: '想念；思念',
+      grammar: '五段动词，用于表达内心深处的思念、牵挂之情，情感色彩比「思う」更浓。',
+      formula: '想う → 想って（て形） / 想った（た形）',
+      tags: ['动词', '他动词', '心理动词'],
+      example: { jp: '故郷を想う。', cn: '我思念故乡。' },
+    },
+  },
+  {
+    num: 3, label: '03', status: '待学习',
+    original: '星がひとつ また消えてく',
+    highlightWord: '消えてく',
+    furigana: 'ほしが ひとつ また きえてく',
+    romaji: 'hoshi ga hitotsu mata kieteku',
+    translation: '又有一颗星星渐渐消失了。',
+    structure: '主语 + が + 数量语 + 状语 + 谓语',
+    tokens: [
+      { text: '星', reading: 'ほし', role: '主语：星星', type: 'content' },
+      { text: 'が', reading: '', role: '主格助词', type: 'particle' },
+      { text: 'ひとつ', reading: '', role: '数量：一颗', type: 'content' },
+      { text: 'また', reading: '', role: '状语：又', type: 'content' },
+      { text: '消えてく', reading: 'きえてく', role: '谓语：消失', type: 'content' },
+    ],
+    tips: [
+      { main: 'が [ga]', label: '轻音' },
+      { main: 'また', label: '重音在前' },
+      { main: 'てく', label: '口语缩略' },
+    ],
+    detail: {
+      word: '消えてく', kana: 'きえてく', romaji: 'kieteku', pos: '动词短语',
+      meaning: '逐渐消失',
+      grammar: '「消えていく」的口语缩略形式，「て形 + いく」表示动作朝远离说话者的方向持续发展。',
+      formula: '消える(て形) + いく → 消えていく → 消えてく（口语）',
+      tags: ['口语缩略', '补助动词', '持续变化'],
+      example: { jp: '夢が消えていく。', cn: '梦想渐渐消逝。' },
+    },
+  },
+  {
+    num: 4, label: '04', status: '待学习',
+    original: '明日へ続く 道を探してる',
+    highlightWord: '探してる',
+    furigana: 'あしたへ つづく みちを さがしてる',
+    romaji: 'ashita e tsuzuku michi o sagashiteru',
+    translation: '寻找着通向明天的道路。',
+    structure: '定语从句（明日へ続く）+ 中心语 + を + 谓语',
+    tokens: [
+      { text: '明日', reading: 'あした', role: '方向：明天', type: 'content' },
+      { text: 'へ', reading: '', role: '方向助词', type: 'particle' },
+      { text: '続く', reading: 'つづく', role: '定语：通向…的', type: 'content' },
+      { text: '道', reading: 'みち', role: '中心语/宾语：道路', type: 'content' },
+      { text: 'を', reading: '', role: '宾格助词', type: 'particle' },
+      { text: '探してる', reading: 'さがしてる', role: '谓语：正在寻找', type: 'content' },
+    ],
+    tips: [
+      { main: 'へ [e]', label: '助词读作e' },
+      { main: 'てる', label: '口语缩略' },
+      { main: '続く', label: '连读注意' },
+    ],
+    detail: {
+      word: '探してる', kana: 'さがしてる', romaji: 'sagashiteru', pos: '动词短语',
+      meaning: '正在寻找',
+      grammar: '「探している」口语中「い」脱落为「探してる」，「て形 + いる」表示动作的持续状态。',
+      formula: '探す(て形) + いる → 探している → 探してる（口语）',
+      tags: ['口语缩略', '持续体', '他动词'],
+      example: { jp: '仕事を探してる。', cn: '我正在找工作。' },
+    },
+  },
+]
+
+export const sampleLyrics =
+  '夜風が静かに 窓をたたく\n遠くの街で 君を想う\n星がひとつ また消えてく\n明日へ続く 道を探してる'

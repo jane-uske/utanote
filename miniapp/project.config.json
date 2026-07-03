@@ -1,0 +1,21 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "utanote",
+  "description": "UtaNote 日语歌词学习小程序",
+  "appid": "touristappid",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": false,
+    "postcss": false,
+    "minified": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "condition": {}
+}
