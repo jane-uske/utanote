@@ -107,11 +107,11 @@ function romajiOf(tokens) {
 
 function buildSentence(line, i, enrich) {
   const localTokens = tokenizeLocal(line)
-  const srcTokens =
-    enrich && Array.isArray(enrich.tokens) && enrich.tokens.length ? enrich.tokens : localTokens
+  const enrichTokens = enrich && Array.isArray(enrich.tokens) ? enrich.tokens : []
 
-  const tokens = srcTokens.map((t, idx) => {
-    const text = String(t.text != null ? t.text : localTokens[idx] ? localTokens[idx].text : '')
+  const tokens = localTokens.map((local, idx) => {
+    const t = enrichTokens[idx] || {}
+    const text = String(local.text || '')
     const type = tokenType(text)
     const reading = (t.reading && String(t.reading)) || localReading(text)
     return {
@@ -123,14 +123,16 @@ function buildSentence(line, i, enrich) {
   })
 
   const firstContent = tokens.find((t) => t.type === 'content')
-  const highlightWord =
-    (enrich && enrich.highlightWord && String(enrich.highlightWord)) ||
-    (firstContent ? firstContent.text : '')
+  const enrichHighlight = enrich && enrich.highlightWord && String(enrich.highlightWord)
+  const highlightWord = enrichHighlight && line.includes(enrichHighlight)
+    ? enrichHighlight
+    : (firstContent ? firstContent.text : '')
 
   const d = (enrich && enrich.detail) || {}
   const hl = tokens.find((t) => t.text === highlightWord)
+  const detailWord = d.word && line.includes(String(d.word)) ? String(d.word) : highlightWord
   const detail = {
-    word: String(d.word || highlightWord),
+    word: detailWord,
     kana: String(d.kana || (hl ? hl.reading : '')),
     romaji: String(d.romaji || readingToRomaji(hl ? hl.reading : '')),
     pos: String(d.pos || ''),
@@ -177,6 +179,7 @@ const SYSTEM_PROMPT = `你是日语歌词教学解析器。用户会给你若干
 规则：
 - sentences 的顺序和数量必须与输入行一致。
 - reading 一律用平假名；汉字词必须给读音，助词/纯假名可留空。
+- 日语原文、highlightWord、tokens.text、detail.word、detail.example.jp 必须保留日语原字形，不要改成中文简体字；例如「夜風」不能写成「夜风」。
 - role 用简洁中文；助词写其语法作用（如「主格助词」）。
 - tips 最多 3 条，可为空数组。
 - 只输出 JSON，不要任何多余文字。`

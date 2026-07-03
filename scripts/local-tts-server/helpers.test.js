@@ -1,0 +1,15 @@
+const assert = require('assert')
+const { clampNumber, normalizeRequest } = require('./helpers')
+
+assert.strictEqual(clampNumber(0.75, 1, 0.5, 1.5), 0.75)
+assert.strictEqual(clampNumber(9, 1, 0.5, 1.5), 1.5)
+assert.strictEqual(clampNumber('bad', 1, 0.5, 1.5), 1)
+assert.strictEqual(normalizeRequest({ text: '' }).code, 'EMPTY_TEXT')
+assert.strictEqual(normalizeRequest({ text: 'あ'.repeat(121) }).code, 'TEXT_TOO_LONG')
+const r = normalizeRequest({ text: '  君がいた  ', speaker: 2, speedScale: 1.15 })
+assert.strictEqual(r.ok, true)
+assert.strictEqual(r.text, '君がいた')
+assert.strictEqual(r.speaker, 2)
+assert.strictEqual(r.speedScale, 1.15)
+
+console.log('local-tts-server helpers ok')

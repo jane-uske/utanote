@@ -1,0 +1,11 @@
+{
+  "name": "utanote-local-tts-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local VOICEVOX-backed Japanese TTS bridge for UtaNote",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node helpers.test.js"
+  }
+}

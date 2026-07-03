@@ -4,14 +4,14 @@
 export const sentences = [
   {
     num: 1, label: '01', status: '新学',
-    original: '夜风が静かに 窓をたたく',
+    original: '夜風が静かに 窓をたたく',
     highlightWord: '静かに',
     furigana: 'よかぜ が しずかに まどを たたく',
     romaji: 'yokaze ga shizuka ni mado o tataku',
     translation: '夜风轻轻地敲打着窗户。',
     structure: '主语 + が + 状语 + 宾语 + を + 谓语',
     tokens: [
-      { text: '夜风', reading: 'よかぜ', role: '主语：夜风', type: 'content' },
+      { text: '夜風', reading: 'よかぜ', role: '主语：夜风', type: 'content' },
       { text: 'が', reading: '', role: '主格助词', type: 'particle' },
       { text: '静かに', reading: 'しずかに', role: '状语：静静地', type: 'content' },
       { text: '窓', reading: 'まど', role: '宾语：窗户', type: 'content' },

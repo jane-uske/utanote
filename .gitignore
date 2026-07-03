@@ -10,6 +10,7 @@ dist/
 .env
 .env.*
 *.local
+.utanote-tts-token
 
 # misc
 .DS_Store

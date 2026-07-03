@@ -48,7 +48,7 @@ export default function App() {
         <div style={{ fontFamily: FONT_SERIF, fontSize: 26, color: '#f2f0f8', letterSpacing: '0.5px' }}>
           UtaNote <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.35)' }}>可交互原型</span>
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>把一首日语歌拆成可学会的每一句</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>把一首日语歌拆成可学会的每一句。通过 AI 解析歌词，为每句生成注音、翻译、语法讲解和词汇卡片，让你在喜欢的音乐中自然习得日语</div>
       </div>
 
       <IOSDevice dark width={402} height={874}>
@@ -65,7 +65,7 @@ export default function App() {
               <div style={{ padding: '4px 22px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
                   <div style={{ fontFamily: FONT_SERIF, fontSize: 30, color: '#f5f4fa', letterSpacing: '0.5px' }}>UtaNote</div>
-                  <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>把一首日语歌拆成可学会的每一句</div>
+                  <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>把一首日语歌拆成可学会的每一句。通过 AI 解析歌词，为每句生成注音、翻译、语法讲解和词汇卡片，让你在喜欢的音乐中自然习得日语</div>
                 </div>
 
                 <div>

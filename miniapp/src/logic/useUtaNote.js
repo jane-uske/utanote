@@ -4,6 +4,7 @@ import { sampleLyrics } from '../data'
 import { loadSongs, addSong, deleteSong, loadMastery, getMastery, setMastery } from './library'
 import { currentStreak, recordStudy } from './streak'
 import { parseLyrics } from './parse'
+import { buildTtsLocalCacheKey, generateLineTts, getCachedTtsAudioSrc, normalizeTtsText, resolveTtsAudioSrc } from './tts'
 import { initFontScale, getFontScale, setFontScale as _setFontScale } from './sx'
 
 // UtaNote logic layer — identical shape to the web app's hook, but parsing goes
@@ -32,6 +33,26 @@ const FONT_SCALE_OPTIONS = [
   { key: 1.15, label: '大' },
   { key: 1.3, label: '超大' },
 ]
+
+const TTS_VOICE_KEY = 'utanote.tts.voice'
+const TTS_VOICE_OPTIONS = [
+  { key: 'voicevox_sora_normal', label: '柔和' },
+  { key: 'voicevox_metan_normal', label: '女声' },
+  { key: 'voicevox_tsumugi_normal', label: '明亮' },
+  { key: 'voicevox_zundamon_normal', label: '活泼' },
+  { key: 'voicevox_no7_reading', label: '朗读' },
+]
+function loadTtsVoice() {
+  try {
+    const value = Taro.getStorageSync(TTS_VOICE_KEY)
+    return TTS_VOICE_OPTIONS.some((o) => o.key === value) ? value : TTS_VOICE_OPTIONS[0].key
+  } catch {
+    return TTS_VOICE_OPTIONS[0].key
+  }
+}
+function saveTtsVoice(value) {
+  try { Taro.setStorageSync(TTS_VOICE_KEY, value) } catch { /* ignore */ }
+}
 
 // Initialize font scale from storage before first render.
 initFontScale()
@@ -73,7 +94,8 @@ export function useUtaNote() {
   const [favorites, setFavorites] = useState(() => loadFavorites())
   const [lyricsText, setLyricsText] = useState('')
   const [songTitle, setSongTitle] = useState('')
-  const [playingId, setPlayingId] = useState(null)
+  const [ttsLoadingId, setTtsLoadingId] = useState(null)
+  const [playingTtsId, setPlayingTtsId] = useState(null)
   const [libraryFilter, setLibraryFilter] = useState('all')
   const [librarySearch, setLibrarySearch] = useState('')
 
@@ -81,13 +103,14 @@ export function useUtaNote() {
   const [activeSongId, setActiveSongId] = useState(() => loadSongs()[0] && loadSongs()[0].id)
   const [masteryMap, setMasteryMap] = useState(() => loadMastery())
   const [fontScale, setFontScaleState] = useState(() => getFontScale())
+  const [ttsVoice, setTtsVoiceState] = useState(() => loadTtsVoice())
 
   const [parsing, setParsing] = useState(false)
   const [parseStage, setParseStage] = useState('')
   const [parseElapsed, setParseElapsed] = useState(0)
   const [parseError, setParseError] = useState('')
   const [parseNotice, setParseNotice] = useState('')
-  const playRef = useRef(null)
+  const audioRef = useRef(null)
   const parseTimerRef = useRef(null)
   const modalTimerRef = useRef(null)
 
@@ -108,14 +131,34 @@ export function useUtaNote() {
   // so it has to be set by hand — otherwise those icons stay whichever
   // color they started in and can go invisible against the flipped bg.
   useEffect(() => {
-    if (typeof Taro.setNavigationBarColor !== 'function') return
+    const backgroundColor = themeMode === 'light' ? '#f4f4f8' : '#0d1120'
     try {
-      Taro.setNavigationBarColor({
-        frontColor: themeMode === 'light' ? '#000000' : '#ffffff',
-        backgroundColor: themeMode === 'light' ? '#f4f4f8' : '#0d1120',
-      })
+      if (typeof Taro.setNavigationBarColor === 'function') {
+        Taro.setNavigationBarColor({
+          frontColor: themeMode === 'light' ? '#000000' : '#ffffff',
+          backgroundColor,
+        })
+      }
+      if (typeof Taro.setBackgroundColor === 'function') {
+        Taro.setBackgroundColor({
+          backgroundColor,
+          backgroundColorTop: backgroundColor,
+          backgroundColorBottom: backgroundColor,
+        })
+      }
     } catch { /* not fatal — custom-drawn UI still reflects the theme */ }
   }, [themeMode])
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        try { audioRef.current.destroy() } catch { /* ignore */ }
+        audioRef.current = null
+      }
+      if (parseTimerRef.current) clearInterval(parseTimerRef.current)
+      if (modalTimerRef.current) clearTimeout(modalTimerRef.current)
+    }
+  }, [])
 
   const activeSong = songs.find((s) => s.id === activeSongId) || songs[0]
   const sentences = activeSong ? activeSong.sentences : []
@@ -177,11 +220,124 @@ export function useUtaNote() {
       return next
     })
   }
-  const togglePlay = () => {
-    const id = 'x' + Math.random()
-    setPlayingId(id)
-    if (playRef.current) clearTimeout(playRef.current)
-    playRef.current = setTimeout(() => setPlayingId((cur) => (cur === id ? null : cur)), 700)
+  const stopTts = () => {
+    if (audioRef.current) {
+      try { audioRef.current.stop() } catch { /* ignore */ }
+    }
+    setPlayingTtsId(null)
+  }
+  const ttsToast = (e) => {
+    const msg = e && e.code === 'TEXT_TOO_LONG'
+      ? '这句歌词太长了'
+      : e && e.code === 'DAILY_LIMIT'
+        ? '今日生成次数已用完'
+        : '语音生成失败，请稍后再试'
+    Taro.showToast({ title: msg, icon: 'none' })
+  }
+  const currentLineId = () => current ? String(current.label || current.num || safeIndex + 1) : ''
+  const currentTtsBaseId = () => current ? `line-${currentLineId()}` : ''
+  const playTtsSrc = (id, src) => {
+    if (typeof Taro.setInnerAudioOption === 'function') {
+      try {
+        Taro.setInnerAudioOption({
+          obeyMuteSwitch: false,
+          mixWithOther: true,
+        })
+      } catch (e) {
+        console.warn('[tts] set inner audio option failed', e)
+      }
+    }
+    const audio = Taro.createInnerAudioContext()
+    if (audioRef.current) {
+      try { audioRef.current.destroy() } catch { /* ignore */ }
+    }
+    audioRef.current = audio
+    audio.src = src
+    audio.volume = 1
+    audio.startTime = 0
+    audio.onEnded(() => setPlayingTtsId((cur) => (cur === id ? null : cur)))
+    audio.onStop(() => setPlayingTtsId((cur) => (cur === id ? null : cur)))
+    audio.onError((e) => {
+      console.warn('[tts] audio play failed', e)
+      setPlayingTtsId((cur) => (cur === id ? null : cur))
+      Taro.showToast({ title: '语音播放失败，请稍后再试', icon: 'none' })
+    })
+    setPlayingTtsId(id)
+    audio.play()
+  }
+  const toggleTts = async ({ id, lineId, text, kana }) => {
+    if (!current || ttsLoadingId || !id) return
+    if (playingTtsId === id) {
+      stopTts()
+      return
+    }
+    const ttsText = normalizeTtsText(text)
+    if (!ttsText) return
+    if (ttsText.length > 120) {
+      Taro.showToast({ title: '这句歌词太长了', icon: 'none' })
+      return
+    }
+    stopTts()
+    const request = {
+      songId: activeSongId || 'demo',
+      lineId,
+      text: ttsText,
+      kana: kana || '',
+      voice: ttsVoice,
+      speedScale: 0.9,
+    }
+    const localCacheKey = buildTtsLocalCacheKey(request)
+    const localSrc = getCachedTtsAudioSrc(localCacheKey)
+    if (localSrc) {
+      playTtsSrc(id, localSrc)
+      return
+    }
+    setTtsLoadingId(id)
+    try {
+      const r = await generateLineTts(request)
+      const src = await resolveTtsAudioSrc(r, localCacheKey)
+      if (!src) throw new Error('missing audio url')
+      playTtsSrc(id, src)
+    } catch (e) {
+      ttsToast(e)
+    } finally {
+      setTtsLoadingId((cur) => (cur === id ? null : cur))
+    }
+  }
+  const toggleLineTts = () => toggleTts({
+    id: currentTtsBaseId(),
+    lineId: currentLineId(),
+    text: current && current.original,
+    kana: current && current.furigana,
+  })
+  const playWordTts = () => {
+    const detail = modalDetail || (current && current.detail) || {}
+    const word = detail.word || ''
+    return toggleTts({
+      id: currentTtsBaseId() + ':word:' + word,
+      lineId: currentLineId() + '-word',
+      text: word,
+      kana: detail.kana || '',
+    })
+  }
+  const playExampleTts = () => {
+    const detail = modalDetail || (current && current.detail) || {}
+    const jp = detail.example && detail.example.jp
+    return toggleTts({
+      id: currentTtsBaseId() + ':example',
+      lineId: currentLineId() + '-example',
+      text: jp || '',
+      kana: '',
+    })
+  }
+  const playTokenTts = (tok, index) => {
+    const text = tok && tok.text
+    return toggleTts({
+      id: currentTtsBaseId() + ':token:' + index + ':' + (text || ''),
+      lineId: currentLineId() + '-token-' + index,
+      text: text || '',
+      kana: tok && tok.reading ? tok.reading : '',
+    })
   }
   const openSongTasks = (id) => {
     setActiveSongId(id); setCardIndex(0); setActiveTab('study'); setStudyPhase('tasks')
@@ -262,8 +418,13 @@ export function useUtaNote() {
   const isAbout = aboutOpen
   const showTabBar = !isCard && !isAbout
 
-  const playGlyph = playingId ? '❚❚' : '▶'
-  const playIconColor = playingId ? 'var(--accent-light)' : 'var(--ink-5)'
+  const currentLine = currentTtsBaseId()
+  const isTtsLoading = !!ttsLoadingId && ttsLoadingId === currentLine
+  const isLinePlaying = !!playingTtsId && playingTtsId === currentLine
+  const playGlyph = isTtsLoading ? '…' : isLinePlaying ? '❚❚' : '▶'
+  const playIconColor = isTtsLoading || isLinePlaying ? 'var(--accent-light)' : 'var(--ink-5)'
+  const playLabel = isTtsLoading ? '生成中' : isLinePlaying ? '播放中' : '朗读'
+  const ttsColorFor = (id) => (ttsLoadingId === id || playingTtsId === id ? 'var(--accent-light)' : 'var(--ink-5)')
 
   const tabs = [
     { key: 'home', label: '首页', icon: '⌂' },
@@ -344,17 +505,24 @@ export function useUtaNote() {
 
   const detail = modalDetail || (current && current.detail) || {}
   const isFav = !!favorites[detail.word]
+  const wordTtsId = currentTtsBaseId() + ':word:' + (detail.word || '')
+  const exampleTtsId = currentTtsBaseId() + ':example'
 
-  const tokenViews = ((current && current.tokens) || []).map((tok, i) => ({
-    key: i,
-    text: tok.text,
-    reading: tok.reading,
-    role: tok.role,
-    bg: tok.type === 'particle' ? 'transparent' : 'var(--ink-05)',
-    border: tok.type === 'particle' ? '1px dashed var(--ink-18)' : '1px solid var(--ink-08)',
-    color: tok.type === 'particle' ? 'var(--ink-55)' : 'var(--text-body)',
-    weight: tok.type === 'particle' ? 400 : 600,
-  }))
+  const tokenViews = ((current && current.tokens) || []).map((tok, i) => {
+    const id = currentTtsBaseId() + ':token:' + i + ':' + (tok.text || '')
+    const active = ttsLoadingId === id || playingTtsId === id
+    return {
+      key: i,
+      text: tok.text,
+      reading: tok.reading,
+      role: tok.role,
+      bg: active ? 'rgba(165,168,236,0.14)' : tok.type === 'particle' ? 'transparent' : 'var(--ink-05)',
+      border: active ? '1px solid rgba(165,168,236,0.52)' : tok.type === 'particle' ? '1px dashed var(--ink-18)' : '1px solid var(--ink-08)',
+      color: active ? 'var(--accent-light)' : tok.type === 'particle' ? 'var(--ink-55)' : 'var(--text-body)',
+      weight: active || tok.type !== 'particle' ? 600 : 400,
+      onClick: () => playTokenTts(tok, i),
+    }
+  })
 
   const AVATAR_HUES = [260, 210, 180, 340, 30, 150, 290, 50, 120, 320]
   const mySongs = songs.map((s, i) => {
@@ -379,6 +547,12 @@ export function useUtaNote() {
     setFontScaleState(scale)
   }
   const fontScaleLabel = (FONT_SCALE_OPTIONS.find((o) => o.key === fontScale) || FONT_SCALE_OPTIONS[1]).label
+  const ttsVoiceLabel = (TTS_VOICE_OPTIONS.find((o) => o.key === ttsVoice) || TTS_VOICE_OPTIONS[0]).label
+  const setTtsVoice = (voice) => {
+    if (!TTS_VOICE_OPTIONS.some((o) => o.key === voice)) return
+    saveTtsVoice(voice)
+    setTtsVoiceState(voice)
+  }
 
   const streakLabel = streakDays > 0 ? `连续学习 ${streakDays} 天 🔥` : '今天开始学习吧 ✨'
 
@@ -403,7 +577,10 @@ export function useUtaNote() {
     toggleRomaji, openWordModal, backToTasks, prevCard, nextCard,
     prevOpacity: safeIndex === 0 ? 0.4 : 1,
     nextLabel: safeIndex >= total - 1 ? '完成' : '下一句',
-    togglePlay, playGlyph, playIconColor,
+    togglePlay: toggleLineTts, playGlyph, playIconColor, playLabel, isTtsLoading, isLinePlaying,
+    playWordTts, playExampleTts,
+    wordPlayIconColor: ttsColorFor(wordTtsId),
+    examplePlayIconColor: ttsColorFor(exampleTtsId),
     weekDays, summaryStats, goHome,
     librarySearch, setSearch, libraryFilterChips, libraryStats, filteredVocab,
     mySongs, importedCount: songs.filter((s) => !s.demo).length,
@@ -417,6 +594,7 @@ export function useUtaNote() {
     currentMasteryBorder: MASTERY_BORDER[currentMastery],
     markAsMastered: () => markAsMastered(safeIndex),
     fontScale, fontScaleLabel, fontScaleOptions: FONT_SCALE_OPTIONS, setFontScaleAction,
+    ttsVoice, ttsVoiceLabel, ttsVoiceOptions: TTS_VOICE_OPTIONS, setTtsVoice,
     openAbout, closeAbout,
   }
 }

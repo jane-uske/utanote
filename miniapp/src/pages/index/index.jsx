@@ -86,15 +86,15 @@ export default function Index() {
         fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
       })}
     >
-      <ScrollView scrollY style={sx({ flex: 1, minHeight: 0 })}>
-        <View style={sx({ paddingTop: 88, paddingBottom: 8 })}>
+      <ScrollView scrollY style={sx({ flex: 1, minHeight: 0, background: 'var(--bg)' })}>
+        <View style={sx({ minHeight: '100%', paddingTop: 88, paddingBottom: 8, background: 'var(--bg)' })}>
 
           {/* ============ HOME ============ */}
           {v.isHome && (
             <View className="screen" style={sx({ padding: '4px 22px 28px', display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' })}>
               <View>
                 <Text style={sx({ fontFamily: '"Noto Serif SC", "Songti SC", "STSong", Georgia, serif', fontSize: 30, color: 'var(--text-heading)', letterSpacing: 1, fontWeight: 600 })}>UtaNote</Text>
-                <View style={sx({ fontSize: 12.5, color: 'var(--ink-45)', marginTop: 4 })}>把一首日语歌拆成可学会的每一句</View>
+                <View style={sx({ fontSize: 14.5, color: 'var(--ink-45)', marginTop: 4 })}>把一首日语歌拆成可学会的每一句。通过 AI 解析歌词，为每句生成注音、翻译、语法讲解和词汇卡片，让你在喜欢的音乐中自然习得日语</View>
               </View>
 
               <View>
@@ -177,8 +177,10 @@ export default function Index() {
                 onTouchCancel={onCardTouchEnd}
                 style={sx({ display: 'flex', flexDirection: 'column', gap: 18, transform: `translateY(${dragY}px)`, transition: dragAnim ? 'transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none' })}
               >
-                <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                  <View onClick={v.backToTasks} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 44, height: 44, lineHeight: '44px', textAlign: 'center', fontSize: 28, color: 'var(--ink-6)', flexShrink: 0, marginLeft: -6 })}>‹</View>
+                <View style={sx({ display: 'flex', alignItems: 'center', gap: 10 })}>
+                  <View onClick={v.backToTasks} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 56, height: 56, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: -11 })}>
+                    <View style={sx({ width: 13, height: 13, borderLeft: '4px solid var(--ink-6)', borderBottom: '4px solid var(--ink-6)', transform: 'rotate(45deg)', marginLeft: 5 })} />
+                  </View>
                   <View style={sx({ flex: 1, height: 4, borderRadius: 2, background: 'var(--ink-08)', overflow: 'hidden' })}>
                     <View style={sx({ height: '100%', borderRadius: 2, background: 'var(--accent)', width: `${v.cardProgressPct}%`, transition: 'width 0.3s ease' })} />
                   </View>
@@ -192,7 +194,9 @@ export default function Index() {
                 <View>
                   <View style={sx({ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 })}>
                     <View style={sx({ fontSize: 13, color: 'var(--ink-45)' })}>今日第 {v.currentSentence.num} 句</View>
-                    <View onClick={v.togglePlay} style={sx({ fontSize: 13, color: v.playIconColor })}>🔊</View>
+                    <View onClick={v.togglePlay} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: v.playIconColor, background: 'var(--ink-05)', border: '1px solid var(--ink-08)', borderRadius: 16, padding: '4px 9px' })}>
+                      <Text>🔊</Text><Text>{v.playLabel}</Text>
+                    </View>
                   </View>
                   <Text style={sx({ fontSize: 21, lineHeight: 1.6, color: 'var(--text-heading)', fontWeight: 600 })}>
                     <Text>{v.currentSplit.pre}</Text>
@@ -207,7 +211,7 @@ export default function Index() {
                   <View style={sx({ fontSize: 12, color: 'var(--accent-light)', marginBottom: 8 })}>{v.currentSentence.structure}</View>
                   <View style={sx({ display: 'flex', flexWrap: 'wrap', gap: 6 })}>
                     {v.tokenViews.map((tok) => (
-                      <View key={tok.key} style={sx({ textAlign: 'center', padding: '6px 10px', borderRadius: 8, background: tok.bg, border: tok.border })}>
+                      <View key={tok.key} onClick={tok.onClick} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ textAlign: 'center', padding: '8px 11px', borderRadius: 8, background: tok.bg, border: tok.border })}>
                         {tok.reading ? <View style={sx({ fontSize: 9, color: 'var(--ink-4)', lineHeight: 1.3 })}>{tok.reading}</View> : null}
                         <View style={sx({ fontSize: 13, color: tok.color, fontWeight: tok.weight })}>{tok.text}</View>
                         <View style={sx({ fontSize: 9, color: 'var(--ink-4)', marginTop: 2, whiteSpace: 'nowrap' })}>{tok.role}</View>
@@ -377,19 +381,30 @@ export default function Index() {
               <View>
                 <View style={sx({ fontSize: 13, fontWeight: 600, color: 'var(--text-body)', marginBottom: 8 })}>设置</View>
                 <View style={sx({ display: 'flex', flexDirection: 'column', borderRadius: 13, background: 'var(--ink-04)', border: '1px solid var(--ink-06)', overflow: 'hidden' })}>
-                  <View style={sx({ padding: '13px 14px', borderBottom: '1px solid var(--ink-06)' })}>
-                    <View style={sx({ display: 'flex', alignItems: 'center', fontSize: 13.5, color: 'var(--text-body)', marginBottom: 10 })}><View style={sx({ flex: 1 })}>字体大小</View><View style={sx({ color: 'var(--ink-4)', fontSize: 12 })}>{v.fontScaleLabel}</View></View>
-                    <View style={sx({ display: 'flex', gap: 8 })}>
-                      {v.fontScaleOptions.map((opt) => {
-                        const active = v.fontScale === opt.key
-                        return (
-                          <View key={opt.key} onClick={() => v.setFontScaleAction(opt.key)} style={sx({ flex: 1, textAlign: 'center', padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: active ? 600 : 400, color: active ? 'var(--accent-light)' : 'var(--ink-5)', background: active ? 'rgba(165,168,236,0.15)' : 'var(--ink-04)', border: active ? '1px solid rgba(165,168,236,0.4)' : '1px solid var(--ink-07)' })}>{opt.label}</View>
-                        )
-                      })}
-                    </View>
-                  </View>
-                  <View onClick={v.openAbout} style={sx({ display: 'flex', alignItems: 'center', padding: '13px 14px', fontSize: 13.5, color: 'var(--text-body)' })}><View style={sx({ flex: 1 })}>关于</View><View style={sx({ color: 'var(--ink-25)' })}>›</View></View>
-                </View>
+	                  <View style={sx({ padding: '13px 14px', borderBottom: '1px solid var(--ink-06)' })}>
+	                    <View style={sx({ display: 'flex', alignItems: 'center', fontSize: 13.5, color: 'var(--text-body)', marginBottom: 10 })}><View style={sx({ flex: 1 })}>字体大小</View><View style={sx({ color: 'var(--ink-4)', fontSize: 12 })}>{v.fontScaleLabel}</View></View>
+	                    <View style={sx({ display: 'flex', gap: 8 })}>
+	                      {v.fontScaleOptions.map((opt) => {
+	                        const active = v.fontScale === opt.key
+	                        return (
+	                          <View key={opt.key} onClick={() => v.setFontScaleAction(opt.key)} style={sx({ flex: 1, textAlign: 'center', padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: active ? 600 : 400, color: active ? 'var(--accent-light)' : 'var(--ink-5)', background: active ? 'rgba(165,168,236,0.15)' : 'var(--ink-04)', border: active ? '1px solid rgba(165,168,236,0.4)' : '1px solid var(--ink-07)' })}>{opt.label}</View>
+	                        )
+	                      })}
+	                    </View>
+	                  </View>
+	                  <View style={sx({ padding: '13px 14px', borderBottom: '1px solid var(--ink-06)' })}>
+	                    <View style={sx({ display: 'flex', alignItems: 'center', fontSize: 13.5, color: 'var(--text-body)', marginBottom: 10 })}><View style={sx({ flex: 1 })}>朗读音色</View><View style={sx({ color: 'var(--ink-4)', fontSize: 12 })}>{v.ttsVoiceLabel}</View></View>
+	                    <View style={sx({ display: 'flex', gap: 7, flexWrap: 'wrap' })}>
+	                      {v.ttsVoiceOptions.map((opt) => {
+	                        const active = v.ttsVoice === opt.key
+	                        return (
+	                          <View key={opt.key} onClick={() => v.setTtsVoice(opt.key)} style={sx({ minWidth: 52, textAlign: 'center', padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: active ? 600 : 400, color: active ? 'var(--accent-light)' : 'var(--ink-5)', background: active ? 'rgba(165,168,236,0.15)' : 'var(--ink-04)', border: active ? '1px solid rgba(165,168,236,0.4)' : '1px solid var(--ink-07)' })}>{opt.label}</View>
+	                        )
+	                      })}
+	                    </View>
+	                  </View>
+	                  <View onClick={v.openAbout} style={sx({ display: 'flex', alignItems: 'center', padding: '13px 14px', fontSize: 13.5, color: 'var(--text-body)' })}><View style={sx({ flex: 1 })}>关于</View><View style={sx({ color: 'var(--ink-25)' })}>›</View></View>
+	                </View>
               </View>
             </View>
           )}
@@ -397,8 +412,10 @@ export default function Index() {
           {/* ============ ABOUT ============ */}
           {v.isAbout && (
             <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 18 })}>
-              <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                <View onClick={v.closeAbout} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 44, height: 44, lineHeight: '44px', textAlign: 'center', fontSize: 28, color: 'var(--ink-6)', flexShrink: 0, marginLeft: -6 })}>‹</View>
+              <View style={sx({ display: 'flex', alignItems: 'center', gap: 10 })}>
+                <View onClick={v.closeAbout} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 56, height: 56, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: -11 })}>
+                  <View style={sx({ width: 13, height: 13, borderLeft: '4px solid var(--ink-6)', borderBottom: '4px solid var(--ink-6)', transform: 'rotate(45deg)', marginLeft: 5 })} />
+                </View>
                 <Text style={sx({ fontSize: 20, fontWeight: 700, color: 'var(--text-heading)' })}>关于</Text>
               </View>
 
@@ -460,7 +477,10 @@ export default function Index() {
         <View style={sx({ padding: '10px 22px 22px', display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--ink-06)', background: 'var(--bg-bar)' })}>
           <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 })}>
             <View onClick={v.prevCard} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'var(--ink-05)', color: 'var(--ink-6)', fontSize: 13, opacity: v.prevOpacity })}>‹ 上一句</View>
-            <View onClick={v.togglePlay} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff', boxShadow: '0 6px 16px rgba(107,112,207,0.4)' })}>{v.playGlyph}</View>
+            <View onClick={v.togglePlay} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, color: '#fff', boxShadow: '0 6px 16px rgba(107,112,207,0.4)', flexShrink: 0 })}>
+              <View style={sx({ fontSize: 17, lineHeight: 1 })}>{v.playGlyph}</View>
+              <View style={sx({ fontSize: 9.5, lineHeight: 1.2 })}>{v.playLabel}</View>
+            </View>
             <View onClick={v.nextCard} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'var(--ink-05)', color: 'var(--ink-6)', fontSize: 13 })}>{v.nextLabel} ›</View>
           </View>
 
@@ -519,7 +539,7 @@ export default function Index() {
               <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                 <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
                   <View style={sx({ fontSize: 22, fontWeight: 700, color: 'var(--text-heading)' })}>{v.currentDetail.word}</View>
-                  <View onClick={v.togglePlay} style={sx({ fontSize: 14, color: v.playIconColor })}>🔊</View>
+                  <View onClick={v.playWordTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 14, color: v.wordPlayIconColor })}>🔊</View>
                 </View>
                 <View style={sx({ display: 'flex', alignItems: 'center', gap: 10 })}>
                   <View style={sx({ fontSize: 11, color: v.currentMasteryColor, padding: '3px 8px', borderRadius: 10, background: 'var(--ink-05)' })}>{v.currentMasteryLabel}</View>
@@ -556,7 +576,7 @@ export default function Index() {
                 <View style={sx({ fontSize: 11, color: 'var(--ink-35)', marginBottom: 6 })}>例句</View>
                 <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
                   <View style={sx({ fontSize: 13.5, color: 'var(--text-body)' })}>{v.currentDetail.example ? v.currentDetail.example.jp : ''}</View>
-                  <View onClick={v.togglePlay} style={sx({ fontSize: 12, color: v.playIconColor })}>🔊</View>
+                  <View onClick={v.playExampleTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 12, color: v.examplePlayIconColor })}>🔊</View>
                 </View>
                 <View style={sx({ fontSize: 12, color: 'var(--ink-4)', marginTop: 4 })}>{v.currentDetail.example ? v.currentDetail.example.cn : ''}</View>
               </View>
