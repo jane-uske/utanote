@@ -4,7 +4,7 @@ import { sampleLyrics } from '../data'
 import { loadSongs, addSong, deleteSong, loadMastery, getMastery, setMastery } from './library'
 import { currentStreak, recordStudy } from './streak'
 import { parseLyrics } from './parse'
-import { buildTtsLocalCacheKey, generateLineTts, getCachedTtsAudioSrc, normalizeTtsText, resolveTtsAudioSrc } from './tts'
+import { buildTtsLocalCacheKey, ensureTtsAsset, getCachedTtsAudioSrc, normalizeTtsText, resolveTtsAudioSrc, resolveTokenAudioText } from './tts'
 import { initFontScale, getFontScale, setFontScale as _setFontScale } from './sx'
 
 // UtaNote logic layer — identical shape to the web app's hook, but parsing goes
@@ -96,6 +96,7 @@ export function useUtaNote() {
   const [songTitle, setSongTitle] = useState('')
   const [ttsLoadingId, setTtsLoadingId] = useState(null)
   const [playingTtsId, setPlayingTtsId] = useState(null)
+  const [ttsSlow, setTtsSlow] = useState(false)
   const [libraryFilter, setLibraryFilter] = useState('all')
   const [librarySearch, setLibrarySearch] = useState('')
 
@@ -227,12 +228,20 @@ export function useUtaNote() {
     setPlayingTtsId(null)
   }
   const ttsToast = (e) => {
-    const msg = e && e.code === 'TEXT_TOO_LONG'
-      ? '这句歌词太长了'
-      : e && e.code === 'DAILY_LIMIT'
-        ? '今日生成次数已用完'
-        : '语音生成失败，请稍后再试'
-    Taro.showToast({ title: msg, icon: 'none' })
+    const code = e && e.code
+    let msg
+    if (code === 'TEXT_TOO_LONG') {
+      msg = '这句歌词太长了，暂不支持朗读'
+    } else if (code === 'DAILY_LIMIT' || code === 'DAILY_USER_ASSET_LIMIT_EXCEEDED' || code === 'DAILY_CUSTOM_TEXT_LIMIT_EXCEEDED') {
+      msg = '今日可生成的学习音频额度已用完，已生成的内容仍可继续播放。'
+    } else if (code === 'GLOBAL_TTS_LIMIT_EXCEEDED') {
+      msg = '今日语音生成较多，请稍后再试，已生成的内容仍可继续播放。'
+    } else if (code === 'TTS_BUSY') {
+      msg = '语音生成繁忙，请稍后再试'
+    } else {
+      msg = '语音播放失败，请重试'
+    }
+    Taro.showToast({ title: msg, icon: 'none', duration: 2500 })
   }
   const currentLineId = () => current ? String(current.label || current.num || safeIndex + 1) : ''
   const currentTtsBaseId = () => current ? `line-${currentLineId()}` : ''
@@ -265,26 +274,32 @@ export function useUtaNote() {
     setPlayingTtsId(id)
     audio.play()
   }
-  const toggleTts = async ({ id, lineId, text, kana }) => {
-    if (!current || ttsLoadingId || !id) return
+  const toggleTts = async ({ id, lineId, text, kana, audioText, forceSlow }) => {
+    if (ttsLoadingId || !id) return
     if (playingTtsId === id) {
       stopTts()
       return
     }
-    const ttsText = normalizeTtsText(text)
+    // Determine audioText: use explicit audioText (for particles), then kana, then text
+    const ttsText = normalizeTtsText(audioText || text)
     if (!ttsText) return
     if (ttsText.length > 120) {
-      Taro.showToast({ title: '这句歌词太长了', icon: 'none' })
+      Taro.showToast({ title: '这句歌词太长了，暂不支持朗读', icon: 'none' })
       return
     }
     stopTts()
+
+    // Determine source type
+    const isDemo = activeSong && activeSong.demo
+    const srcType = isDemo ? 'whitelist_song' : (activeSongId ? 'user_uploaded_song' : 'platform_card')
+    const isSlow = forceSlow != null ? forceSlow : ttsSlow
+    const speedScale = isSlow ? 0.65 : 0.9
+
     const request = {
-      songId: activeSongId || 'demo',
-      lineId,
-      text: ttsText,
-      kana: kana || '',
+      audioText: ttsText,
+      text: normalizeTtsText(text),
       voice: ttsVoice,
-      speedScale: 0.9,
+      speedScale,
     }
     const localCacheKey = buildTtsLocalCacheKey(request)
     const localSrc = getCachedTtsAudioSrc(localCacheKey)
@@ -294,7 +309,16 @@ export function useUtaNote() {
     }
     setTtsLoadingId(id)
     try {
-      const r = await generateLineTts(request)
+      const r = await ensureTtsAsset({
+        source: srcType,
+        songId: activeSongId || '',
+        lineId: lineId || '',
+        assetType: isSlow ? 'sentence_slow' : 'sentence_normal',
+        audioText: ttsText,
+        text: normalizeTtsText(text),
+        voice: ttsVoice,
+        speedScale,
+      })
       const src = await resolveTtsAudioSrc(r, localCacheKey)
       if (!src) throw new Error('missing audio url')
       playTtsSrc(id, src)
@@ -305,10 +329,18 @@ export function useUtaNote() {
     }
   }
   const toggleLineTts = () => toggleTts({
-    id: currentTtsBaseId(),
+    id: currentTtsBaseId() + (ttsSlow ? ':slow' : ''),
     lineId: currentLineId(),
     text: current && current.original,
     kana: current && current.furigana,
+    forceSlow: ttsSlow,
+  })
+  const toggleLineTtsSlow = () => toggleTts({
+    id: currentTtsBaseId() + ':slow',
+    lineId: currentLineId(),
+    text: current && current.original,
+    kana: current && current.furigana,
+    forceSlow: true,
   })
   const playWordTts = () => {
     const detail = modalDetail || (current && current.detail) || {}
@@ -331,11 +363,15 @@ export function useUtaNote() {
     })
   }
   const playTokenTts = (tok, index) => {
-    const text = tok && tok.text
+    const tokens = (current && current.tokens) || []
+    const displayText = tok && tok.text ? String(tok.text).trim() : ''
+    // For particles, play the preceding word + particle
+    const audioText = resolveTokenAudioText(tok, index, tokens)
     return toggleTts({
-      id: currentTtsBaseId() + ':token:' + index + ':' + (text || ''),
+      id: currentTtsBaseId() + ':token:' + index + ':' + displayText,
       lineId: currentLineId() + '-token-' + index,
-      text: text || '',
+      text: displayText,
+      audioText: audioText || displayText,
       kana: tok && tok.reading ? tok.reading : '',
     })
   }
@@ -419,11 +455,16 @@ export function useUtaNote() {
   const showTabBar = !isCard && !isAbout
 
   const currentLine = currentTtsBaseId()
-  const isTtsLoading = !!ttsLoadingId && ttsLoadingId === currentLine
-  const isLinePlaying = !!playingTtsId && playingTtsId === currentLine
+  const slowLineId = currentLine + ':slow'
+  const isTtsLoading = !!ttsLoadingId && (ttsLoadingId === currentLine || ttsLoadingId === slowLineId)
+  const isLinePlaying = !!playingTtsId && (playingTtsId === currentLine || playingTtsId === slowLineId)
+  const isTtsLoadingSlow = !!ttsLoadingId && ttsLoadingId === slowLineId
+  const isLinePlayingSlow = !!playingTtsId && playingTtsId === slowLineId
   const playGlyph = isTtsLoading ? '…' : isLinePlaying ? '❚❚' : '▶'
   const playIconColor = isTtsLoading || isLinePlaying ? 'var(--accent-light)' : 'var(--ink-5)'
   const playLabel = isTtsLoading ? '生成中' : isLinePlaying ? '播放中' : '朗读'
+  const slowLabel = isTtsLoadingSlow ? '生成中' : isLinePlayingSlow ? '慢速中' : '慢速'
+  const slowColor = isTtsLoadingSlow || isLinePlayingSlow ? 'var(--accent-light)' : 'var(--ink-5)'
   const ttsColorFor = (id) => (ttsLoadingId === id || playingTtsId === id ? 'var(--accent-light)' : 'var(--ink-5)')
 
   const tabs = [
@@ -577,8 +618,8 @@ export function useUtaNote() {
     toggleRomaji, openWordModal, backToTasks, prevCard, nextCard,
     prevOpacity: safeIndex === 0 ? 0.4 : 1,
     nextLabel: safeIndex >= total - 1 ? '完成' : '下一句',
-    togglePlay: toggleLineTts, playGlyph, playIconColor, playLabel, isTtsLoading, isLinePlaying,
-    playWordTts, playExampleTts,
+    togglePlay: toggleLineTts, toggleSlow: toggleLineTtsSlow, playGlyph, playIconColor, playLabel, isTtsLoading, isLinePlaying,
+    slowLabel, slowColor, ttsSlow, setTtsSlow, playWordTts, playExampleTts,
     wordPlayIconColor: ttsColorFor(wordTtsId),
     examplePlayIconColor: ttsColorFor(exampleTtsId),
     weekDays, summaryStats, goHome,

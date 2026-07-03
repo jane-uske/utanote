@@ -52,6 +52,8 @@ page {
   --success-soft: rgba(142,214,168,0.2);
   --warning: #e8c468;
   --warning-soft: rgba(232,196,104,0.2);
+  --overlay: rgba(0,0,0,0.55);
+
   --error: #e05050;
   --error-text: #ffb4b4;
   --notice-text: #cfe0ff;
@@ -97,6 +99,8 @@ page {
   --success-soft: rgba(47,156,92,0.22);
   --warning: #a9781f;
   --warning-soft: rgba(169,120,31,0.22);
+  --overlay: rgba(0,0,0,0.3);
+
   --error: #c23636;
   --error-text: #a02f2f;
   --notice-text: #1c5aa8;

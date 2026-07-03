@@ -10,6 +10,12 @@ const PORT = Number(process.env.PORT || process.env.UTANOTE_TTS_PORT || 8787)
 const TOKEN = String(process.env.UTANOTE_TTS_TOKEN || '').trim()
 const VOICEVOX_BASE = String(process.env.VOICEVOX_ENGINE_URL || 'http://127.0.0.1:50021').replace(/\/+$/, '')
 const MAX_BODY_BYTES = 16 * 1024
+const MAX_TTS_CONCURRENCY = Math.max(1, Number(process.env.MAX_TTS_CONCURRENCY || 1))
+const FFMPEG_PATH = String(process.env.FFMPEG_PATH || 'ffmpeg')
+const FFPROBE_PATH = String(process.env.FFPROBE_PATH || 'ffprobe')
+
+// ── Concurrency limiter ──────────────────────────────────────────
+let activeTtsRequests = 0
 
 function sendJSON(res, statusCode, payload) {
   const body = JSON.stringify(payload)
@@ -73,6 +79,7 @@ async function synthesizeWav(params) {
   audioQuery.speedScale = params.speedScale
   audioQuery.pitchScale = params.pitchScale
   audioQuery.intonationScale = params.intonationScale
+  audioQuery.volumeScale = params.volumeScale
 
   const synthesisURL = new URL(VOICEVOX_BASE + '/synthesis')
   synthesisURL.searchParams.set('speaker', String(params.speaker))
@@ -85,7 +92,7 @@ async function synthesizeWav(params) {
 
 function runFFmpeg(inputPath, outputPath) {
   return new Promise((resolve, reject) => {
-    const ff = spawn('ffmpeg', [
+    const ff = spawn(FFMPEG_PATH, [
       '-y',
       '-hide_banner',
       '-loglevel', 'error',
@@ -99,14 +106,14 @@ function runFFmpeg(inputPath, outputPath) {
     ff.on('error', reject)
     ff.on('close', (code) => {
       if (code === 0) resolve()
-      else reject(new Error(stderr || `ffmpeg exited with code ${code}`))
+      else reject(Object.assign(new Error(stderr || `ffmpeg exited with code ${code}`), { code: 'FFMPEG_FAILED' }))
     })
   })
 }
 
 function probeDurationMs(inputPath) {
   return new Promise((resolve) => {
-    const ff = spawn('ffprobe', [
+    const ff = spawn(FFPROBE_PATH, [
       '-v', 'error',
       '-show_entries', 'format=duration',
       '-of', 'default=noprint_wrappers=1:nokey=1',
@@ -139,36 +146,72 @@ async function wavToMp3(wav) {
   }
 }
 
+// ── Health check with VOICEVOX reachability ──────────────────────
+async function checkVoicevoxReachable() {
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 3000)
+    const res = await fetch(VOICEVOX_BASE + '/version', { signal: ctrl.signal })
+    clearTimeout(timer)
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+async function handleHealth(req, res) {
+  const voicevoxReachable = await checkVoicevoxReachable()
+  sendJSON(res, 200, {
+    ok: true,
+    engine: 'voicevox',
+    voicevoxReachable,
+    activeRequests: activeTtsRequests,
+    maxConcurrency: MAX_TTS_CONCURRENCY,
+  })
+}
+
+// ── TTS handler ──────────────────────────────────────────────────
 async function handleTts(req, res) {
+  // Auth
   if (!TOKEN) {
-    sendJSON(res, 500, { ok: false, code: 'TOKEN_NOT_CONFIGURED', error: 'UTANOTE_TTS_TOKEN is not configured' })
+    sendJSON(res, 500, { error: 'TOKEN_NOT_CONFIGURED' })
     return
   }
   if (req.headers['x-utanote-token'] !== TOKEN) {
-    sendJSON(res, 401, { ok: false, code: 'UNAUTHORIZED', error: 'invalid token' })
+    sendJSON(res, 401, { error: 'UNAUTHORIZED' })
     return
   }
 
+  // Concurrency check
+  if (activeTtsRequests >= MAX_TTS_CONCURRENCY) {
+    sendJSON(res, 429, {
+      error: 'TTS_BUSY',
+      message: '语音生成繁忙，请稍后再试',
+    })
+    return
+  }
+
+  // Parse body
   let body
   try {
     body = await readJSON(req)
   } catch (e) {
     const code = e.code === 'BODY_TOO_LARGE' ? 'BODY_TOO_LARGE' : 'BAD_JSON'
-    sendJSON(res, 400, { ok: false, code, error: e.message })
+    sendJSON(res, 400, { error: code })
     return
   }
 
   const params = normalizeRequest(body)
   if (!params.ok) {
-    sendJSON(res, params.status, { ok: false, code: params.code, error: params.message })
+    sendJSON(res, params.status, { error: params.code, message: params.message })
     return
   }
 
+  activeTtsRequests++
   try {
     const wav = await synthesizeWav(params)
     const { mp3, durationMs } = await wavToMp3(wav)
     sendJSON(res, 200, {
-      ok: true,
       requestId: randomUUID(),
       contentType: 'audio/mpeg',
       ext: 'mp3',
@@ -178,30 +221,35 @@ async function handleTts(req, res) {
       speaker: params.speaker,
     })
   } catch (e) {
-    console.error('[jp-tts]', e)
-    const status = e.status && e.status >= 400 && e.status < 600 ? 502 : 500
-    sendJSON(res, status, {
-      ok: false,
-      code: e.status ? 'VOICEVOX_FAILED' : 'TTS_FAILED',
-      error: e.message || String(e),
-    })
+    console.error('[jp-tts] synthesis failed (code=%s)', e.code || 'UNKNOWN')
+    if (e.status && e.status >= 400 && e.status < 600) {
+      sendJSON(res, 502, { error: 'VOICEVOX_ENGINE_FAILED' })
+    } else if (e.code === 'FFMPEG_FAILED') {
+      sendJSON(res, 500, { error: 'FFMPEG_FAILED' })
+    } else {
+      sendJSON(res, 500, { error: 'VOICEVOX_ENGINE_FAILED' })
+    }
+  } finally {
+    activeTtsRequests--
   }
 }
 
+// ── Server ───────────────────────────────────────────────────────
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
   if (req.method === 'GET' && url.pathname === '/health') {
-    sendJSON(res, 200, { ok: true, engine: 'voicevox', voicevoxBase: VOICEVOX_BASE })
+    handleHealth(req, res)
     return
   }
   if (req.method === 'POST' && url.pathname === '/internal/jp-tts') {
     handleTts(req, res)
     return
   }
-  sendJSON(res, 404, { ok: false, code: 'NOT_FOUND', error: 'not found' })
+  sendJSON(res, 404, { error: 'NOT_FOUND' })
 })
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`UtaNote local TTS server listening on http://127.0.0.1:${PORT}`)
-  console.log(`VOICEVOX Engine: ${VOICEVOX_BASE}`)
+  console.log('UtaNote local TTS server listening on http://127.0.0.1:%d', PORT)
+  console.log('VOICEVOX Engine: %s', VOICEVOX_BASE)
+  console.log('Max concurrency: %d', MAX_TTS_CONCURRENCY)
 })
