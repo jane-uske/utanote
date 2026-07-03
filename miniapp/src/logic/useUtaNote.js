@@ -103,6 +103,20 @@ export function useUtaNote() {
     }
   }, [])
 
+  // navigationStyle:'custom' means WeChat doesn't auto-apply theme.json's
+  // navigationBarTextStyle to the system status bar (time/battery/signal),
+  // so it has to be set by hand — otherwise those icons stay whichever
+  // color they started in and can go invisible against the flipped bg.
+  useEffect(() => {
+    if (typeof Taro.setNavigationBarColor !== 'function') return
+    try {
+      Taro.setNavigationBarColor({
+        frontColor: themeMode === 'light' ? '#000000' : '#ffffff',
+        backgroundColor: themeMode === 'light' ? '#f4f4f8' : '#0d1120',
+      })
+    } catch { /* not fatal — custom-drawn UI still reflects the theme */ }
+  }, [themeMode])
+
   const activeSong = songs.find((s) => s.id === activeSongId) || songs[0]
   const sentences = activeSong ? activeSong.sentences : []
   const total = sentences.length

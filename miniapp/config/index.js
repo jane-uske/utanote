@@ -7,7 +7,10 @@ const config = {
   outputRoot: 'dist',
   plugins: [],
   defineConstants: {},
-  copy: { patterns: [], options: {} },
+  copy: {
+    patterns: [{ from: 'src/theme.json', to: 'dist/theme.json' }],
+    options: {},
+  },
   framework: 'react',
   compiler: 'webpack5',
   cache: { enable: false },
