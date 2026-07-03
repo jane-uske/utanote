@@ -15,3 +15,4 @@ dist/
 # misc
 .DS_Store
 cloudfunctions/*/node_modules/
+scripts/local-tts-server/.env.local
