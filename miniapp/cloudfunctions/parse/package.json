@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "UtaNote lyrics parsing cloud function (local NLP + DeepSeek)",
   "main": "index.js",
+  "scripts": {
+    "test": "node helpers.test.js"
+  },
   "dependencies": {
     "wx-server-sdk": "~2.6.3",
     "wanakana": "^5.3.1"

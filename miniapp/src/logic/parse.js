@@ -3,6 +3,18 @@
 
 import Taro from '@tarojs/taro'
 
+// Mirrors the server-side heuristic in cloudfunctions/parse/helpers.js — real
+// Japanese lyrics always mix in hiragana/katakana (particles, verb endings),
+// so kana-free text (plain Chinese, English, etc.) is rejected client-side
+// before it spends a cloud call or a daily-quota slot.
+const JA_KANA_MIN_RATIO = 0.15
+export function looksJapanese(text) {
+  const chars = String(text || '').replace(/\s/g, '')
+  if (!chars) return false
+  const kana = (chars.match(/[぀-ゟ゠-ヿ]/g) || []).length
+  return kana / chars.length >= JA_KANA_MIN_RATIO
+}
+
 export async function parseLyrics(lyrics) {
   let res
   try {

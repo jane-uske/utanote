@@ -18,6 +18,7 @@ const https = require('https')
 const http = require('http')
 const { URL } = require('url')
 const cloud = require('wx-server-sdk')
+const { extractJSON, chunk, runWithConcurrency, mergeChunkResults, looksJapanese } = require('./helpers')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -184,24 +185,18 @@ const SYSTEM_PROMPT = `你是日语歌词教学解析器。用户会给你若干
 - tips 最多 3 条，可为空数组。
 - 只输出 JSON，不要任何多余文字。`
 
+// Appended only to the first chunk's request — asking every chunk to name
+// the song would waste tokens and give later chunks (mid-song lines) no
+// better a shot at guessing it than the opening lines already have.
+const TITLE_SUFFIX = `
+
+另外，请结合以上歌词内容，在 JSON 根节点额外加一个 "title" 字段：拟一个贴切、吸引人的中文歌曲标题（不超过 16 个字，不要加书名号）。如果实在无法判断，就用歌词第一行原文作为 title。`
+
 function buildUserPrompt(lines) {
   const listed = lines
     .map((line, i) => `${i + 1}. 「${line}」  分词参考: ${tokenizeLocal(line).map((t) => t.text).join(' / ')}`)
     .join('\n')
   return `请解析以下 ${lines.length} 行歌词：\n${listed}`
-}
-
-function extractJSON(text) {
-  if (!text) throw new Error('模型返回为空')
-  let t = String(text).trim()
-  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i)
-  if (fence) t = fence[1].trim()
-  if (t[0] !== '{') {
-    const a = t.indexOf('{')
-    const b = t.lastIndexOf('}')
-    if (a >= 0 && b > a) t = t.slice(a, b + 1)
-  }
-  return JSON.parse(t)
 }
 
 function httpRequest(urlStr, options, body) {
@@ -223,14 +218,14 @@ function httpRequest(urlStr, options, body) {
   })
 }
 
-async function callLLM({ baseURL, apiKey, model, lines }) {
+async function callLLM({ baseURL, apiKey, model, lines, wantTitle }) {
   const url = baseURL.replace(/\/+$/, '') + '/chat/completions'
   const payload = JSON.stringify({
     model,
     temperature: 0.2,
     response_format: { type: 'json_object' },
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: wantTitle ? SYSTEM_PROMPT + TITLE_SUFFIX : SYSTEM_PROMPT },
       { role: 'user', content: buildUserPrompt(lines) },
     ],
   })
@@ -251,49 +246,13 @@ async function callLLM({ baseURL, apiKey, model, lines }) {
   const out = extractJSON(content)
   return {
     sentences: Array.isArray(out && out.sentences) ? out.sentences : [],
+    title: wantTitle ? String((out && out.title) || '').trim().slice(0, 16) : '',
     usage: {
       prompt_tokens: usage.prompt_tokens || 0,
       completion_tokens: usage.completion_tokens || 0,
       total_tokens: usage.total_tokens || 0,
     },
   }
-}
-
-// Split an array into chunks of at most `size` elements.
-function chunk(arr, size) {
-  const out = []
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
-  return out
-}
-
-// Run `worker` over `items` with at most `limit` in flight at once.
-// Returns Promise.allSettled-shaped results, in input order.
-async function runWithConcurrency(items, limit, worker) {
-  const results = new Array(items.length)
-  let nextIndex = 0
-
-  async function run() {
-    while (nextIndex < items.length) {
-      const current = nextIndex++
-      try {
-        results[current] = {
-          status: 'fulfilled',
-          value: await worker(items[current], current),
-        }
-      } catch (e) {
-        results[current] = {
-          status: 'rejected',
-          reason: e,
-        }
-      }
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, run)
-  )
-
-  return results
 }
 
 // Call LLM in batches of CHUNK_SIZE lines, at most MAX_CONCURRENCY in flight.
@@ -306,31 +265,9 @@ async function callLLMChunked({ baseURL, apiKey, model, lines }) {
   const results = await runWithConcurrency(
     chunks,
     MAX_CONCURRENCY,
-    (ch) => callLLM({ baseURL, apiKey, model, lines: ch })
+    (ch, idx) => callLLM({ baseURL, apiKey, model, lines: ch, wantTitle: idx === 0 })
   )
-  const enriched = []
-  const warnings = []
-  const totalUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
-  for (let ci = 0; ci < results.length; ci++) {
-    const r = results[ci]
-    if (r.status === 'fulfilled') {
-      const arr = Array.isArray(r.value.sentences) ? r.value.sentences : []
-      if (arr.length !== chunks[ci].length) {
-        warnings.push(`批次 ${ci + 1}/${chunks.length} 返回数量异常，已自动对齐`)
-      }
-      for (let j = 0; j < chunks[ci].length; j++) {
-        enriched.push(arr[j] || null)
-      }
-      totalUsage.prompt_tokens += r.value.usage.prompt_tokens
-      totalUsage.completion_tokens += r.value.usage.completion_tokens
-      totalUsage.total_tokens += r.value.usage.total_tokens
-    } else {
-      const errMsg = (r.reason && r.reason.message) || String(r.reason)
-      warnings.push(`批次 ${ci + 1}/${chunks.length} 失败: ${errMsg}`)
-      for (let j = 0; j < chunks[ci].length; j++) enriched.push(null)
-    }
-  }
-  return { enriched, warnings, usage: totalUsage }
+  return mergeChunkResults(results, chunks)
 }
 
 // Cloud function entry.
@@ -364,6 +301,9 @@ exports.main = async (event = {}) => {
   if (rawLyrics.length > MAX_CHARS) {
     return { ok: false, error: `歌词过长，最多支持 ${MAX_CHARS} 字。` }
   }
+  if (!looksJapanese(rawLyrics)) {
+    return { ok: false, error: '仅支持日语歌词，请确认粘贴的是日文歌词后重试。' }
+  }
 
   const apiKey = (process.env.DEEPSEEK_KEY || '').trim()
   const baseURL = (process.env.DEEPSEEK_BASE || DEFAULT_BASE).trim()
@@ -385,7 +325,7 @@ exports.main = async (event = {}) => {
     return { ok: true, source, truncated, sentences }
   }
 
-  const { enriched, warnings, usage } = await callLLMChunked({ baseURL, apiKey, model, lines })
+  const { enriched, warnings, usage, title } = await callLLMChunked({ baseURL, apiKey, model, lines })
   tokenUsage = usage
   const allNull = enriched.every((e) => e == null)
   source = allNull ? 'local' : warnings.length ? 'partial' : 'llm'
@@ -411,5 +351,5 @@ exports.main = async (event = {}) => {
     }
   }
 
-  return { ok: true, source, truncated, warning, sentences }
+  return { ok: true, source, truncated, warning, sentences, title: title || undefined }
 }
