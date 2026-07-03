@@ -186,7 +186,7 @@ export default function Index() {
                 style={sx({ display: 'flex', flexDirection: 'column', gap: 18, transform: `translateY(${dragY}px)`, transition: dragAnim ? 'transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none' })}
               >
                 <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                  <View onClick={v.backToTasks} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
+                  <View onClick={v.backToTasks} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 44, height: 44, lineHeight: '44px', textAlign: 'center', fontSize: 28, color: 'rgba(255,255,255,0.6)', flexShrink: 0, marginLeft: -6 })}>‹</View>
                   <View style={sx({ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' })}>
                     <View style={sx({ height: '100%', borderRadius: 2, background: '#8489e0', width: `${v.cardProgressPct}%`, transition: 'width 0.3s ease' })} />
                   </View>
@@ -406,7 +406,7 @@ export default function Index() {
           {v.isAbout && (
             <View className="screen" style={sx({ padding: '4px 22px 24px', display: 'flex', flexDirection: 'column', gap: 18 })}>
               <View style={sx({ display: 'flex', alignItems: 'center', gap: 12 })}>
-                <View onClick={v.closeAbout} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 36, height: 36, lineHeight: '30px', textAlign: 'center', fontSize: 24, color: 'rgba(255,255,255,0.6)', flexShrink: 0 })}>‹</View>
+                <View onClick={v.closeAbout} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 44, height: 44, lineHeight: '44px', textAlign: 'center', fontSize: 28, color: 'rgba(255,255,255,0.6)', flexShrink: 0, marginLeft: -6 })}>‹</View>
                 <Text style={sx({ fontSize: 20, fontWeight: 700, color: '#f5f4fa' })}>关于</Text>
               </View>
 
