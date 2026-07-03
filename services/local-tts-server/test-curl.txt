@@ -1,0 +1,4 @@
+curl -X POST http://127.0.0.1:8787/internal/jp-tts \
+  -H 'Content-Type: application/json' \
+  -H 'X-UtaNote-Token: replace-with-your-token' \
+  --data @test-payload.json
