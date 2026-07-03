@@ -1,8 +1,8 @@
 import Taro from '@tarojs/taro'
 
-const LOCAL_TTS_CACHE = 'utanote.tts.localAudio.v1'
+const LOCAL_TTS_CACHE = 'utanote.tts.localAudio.v2'
 const LOCAL_ENGINE_VERSION = 'voicevox-v1'
-const LOCAL_CACHE_LIMIT = 80
+const LOCAL_CACHE_LIMIT = 120
 const JP_ORTHOGRAPHY_REPLACEMENTS = {
   风: '風',
 }
@@ -10,6 +10,12 @@ const JP_ORTHOGRAPHY_REPLACEMENTS = {
 function normalizeText(text) {
   const normalized = String(text || '').trim().replace(/\s+/g, ' ')
   return normalized.replace(/[风]/g, (char) => JP_ORTHOGRAPHY_REPLACEMENTS[char] || char)
+}
+
+function normalizeSpeedScale(value) {
+  const n = Number(value == null ? 0.9 : value)
+  if (!Number.isFinite(n)) return 0.9
+  return Math.max(0.5, Math.min(1.5, Math.round(n * 100) / 100))
 }
 
 function stableHash(value) {
@@ -55,12 +61,15 @@ function fileExists(path) {
 }
 
 export function buildTtsLocalCacheKey(data) {
+  // Local playback cache mirrors the cloud global cache: the same text/voice/speed
+  // should reuse one saved audio file no matter which song or line triggered it.
   const source = JSON.stringify({
-    songId: data && data.songId,
-    lineId: data && data.lineId,
-    text: normalizeText(data && data.text),
+    text: normalizeText(data && (data.audioText || data.text)),
     voice: (data && data.voice) || 'voicevox_default_female',
-    speedScale: data && data.speedScale,
+    speaker: data && data.speaker,
+    speedScale: normalizeSpeedScale(data && data.speedScale),
+    pitchScale: data && data.pitchScale == null ? 0 : data.pitchScale,
+    intonationScale: data && data.intonationScale == null ? 1 : data.intonationScale,
     engineVersion: LOCAL_ENGINE_VERSION,
   })
   return 'tts:' + stableHash(source)
@@ -113,6 +122,7 @@ export async function generateLineTts(data) {
   if (!r || !r.ok) {
     const err = new Error((r && (r.error || r.message)) || '语音生成失败，请稍后再试')
     err.code = r && r.code
+    err.result = r
     throw err
   }
   return r
