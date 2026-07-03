@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Taro from '@tarojs/taro'
 import { sampleLyrics } from '../data'
 import { loadSongs, addSong, deleteSong, loadMastery, getMastery, setMastery } from './library'
@@ -21,7 +21,10 @@ function splitSentence(s) {
 }
 
 const MASTERY_LABEL = { mastered: '已掌握', learning: '学习中', new: '未学习' }
-const MASTERY_COLOR = { mastered: '#8ed6a8', learning: '#e8c468', new: 'rgba(255,255,255,0.4)' }
+const MASTERY_COLOR = { mastered: 'var(--success)', learning: 'var(--warning)', new: 'var(--ink-4)' }
+// Pre-composed translucent border variants — var(--x) can't take a hex-style
+// alpha suffix (unlike a literal hex color), so these are separate tokens.
+const MASTERY_BORDER = { mastered: 'var(--success-soft)', learning: 'var(--warning-soft)', new: 'var(--ink-2)' }
 
 const FONT_SCALE_OPTIONS = [
   { key: 0.9, label: '小' },
@@ -48,6 +51,14 @@ function persistFavorites(fav) {
   try { Taro.setStorageSync(FAV_KEY, fav) } catch { /* ignore */ }
 }
 
+// System light/dark mode. Falls back to dark (the app's original design)
+// if the base library doesn't report a theme.
+function getSystemTheme() {
+  try {
+    return Taro.getSystemInfoSync().theme === 'light' ? 'light' : 'dark'
+  } catch { return 'dark' }
+}
+
 export function useUtaNote() {
   const [activeTab, setActiveTab] = useState('home')
   const [studyPhase, setStudyPhase] = useState('tasks')
@@ -58,6 +69,7 @@ export function useUtaNote() {
   const [streakDays, setStreakDays] = useState(() => currentStreak())
   const [romajiOpen, setRomajiOpen] = useState(false)
   const [navDir, setNavDir] = useState('next')
+  const [themeMode, setThemeMode] = useState(() => getSystemTheme())
   const [favorites, setFavorites] = useState(() => loadFavorites())
   const [lyricsText, setLyricsText] = useState('')
   const [songTitle, setSongTitle] = useState('')
@@ -78,6 +90,18 @@ export function useUtaNote() {
   const playRef = useRef(null)
   const parseTimerRef = useRef(null)
   const modalTimerRef = useRef(null)
+
+  // Live-follow system theme changes (e.g. user flips iOS/Android dark mode
+  // while the mini program is open). onThemeChange isn't on every base
+  // library version, so this is best-effort — initial read still works.
+  useEffect(() => {
+    if (typeof Taro.onThemeChange !== 'function') return
+    const handler = (res) => setThemeMode(res && res.theme === 'light' ? 'light' : 'dark')
+    Taro.onThemeChange(handler)
+    return () => {
+      if (typeof Taro.offThemeChange === 'function') Taro.offThemeChange(handler)
+    }
+  }, [])
 
   const activeSong = songs.find((s) => s.id === activeSongId) || songs[0]
   const sentences = activeSong ? activeSong.sentences : []
@@ -225,7 +249,7 @@ export function useUtaNote() {
   const showTabBar = !isCard && !isAbout
 
   const playGlyph = playingId ? '❚❚' : '▶'
-  const playIconColor = playingId ? '#a5a8ec' : 'rgba(255,255,255,0.5)'
+  const playIconColor = playingId ? 'var(--accent-light)' : 'var(--ink-5)'
 
   const tabs = [
     { key: 'home', label: '首页', icon: '⌂' },
@@ -237,7 +261,7 @@ export function useUtaNote() {
     return {
       ...t,
       active,
-      color: active ? '#a5a8ec' : 'rgba(255,255,255,0.4)',
+      color: active ? 'var(--accent-light)' : 'var(--ink-4)',
       onClick: () => { setAboutOpen(false); setTab(t.key) },
     }
   })
@@ -247,16 +271,16 @@ export function useUtaNote() {
     label: row.label,
     text: row.original,
     status: row.status,
-    badgeBg: row.status === '新学' ? 'rgba(165,168,236,0.15)' : 'rgba(255,255,255,0.06)',
-    badgeColor: row.status === '新学' ? '#a5a8ec' : 'rgba(255,255,255,0.4)',
-    borderColor: i === 0 ? 'rgba(165,168,236,0.45)' : 'rgba(255,255,255,0.06)',
+    badgeBg: row.status === '新学' ? 'rgba(165,168,236,0.15)' : 'var(--ink-06)',
+    badgeColor: row.status === '新学' ? 'var(--accent-light)' : 'var(--ink-4)',
+    borderColor: i === 0 ? 'rgba(165,168,236,0.45)' : 'var(--ink-06)',
     onClick: () => openCard(i),
   }))
 
   const weekDays = [
     { label: '一', done: true }, { label: '二', done: true }, { label: '三', done: true },
     { label: '四', done: true }, { label: '五', done: false }, { label: '六', done: false }, { label: '日', done: false },
-  ].map((d) => ({ label: d.label, bg: d.done ? '#6b70cf' : 'rgba(255,255,255,0.06)', mark: d.done ? '✓' : '' }))
+  ].map((d) => ({ label: d.label, bg: d.done ? '#6b70cf' : 'var(--ink-06)', mark: d.done ? '✓' : '' }))
 
   const summaryStats = [
     { value: '12 句', label: '本周新学句子', delta: '+8' },
@@ -292,9 +316,9 @@ export function useUtaNote() {
     const active = libraryFilter === f.key
     return {
       ...f,
-      bg: active ? 'rgba(165,168,236,0.18)' : 'rgba(255,255,255,0.04)',
-      color: active ? '#a5a8ec' : 'rgba(255,255,255,0.5)',
-      border: active ? '1px solid rgba(165,168,236,0.4)' : '1px solid rgba(255,255,255,0.07)',
+      bg: active ? 'rgba(165,168,236,0.18)' : 'var(--ink-04)',
+      color: active ? 'var(--accent-light)' : 'var(--ink-5)',
+      border: active ? '1px solid rgba(165,168,236,0.4)' : '1px solid var(--ink-07)',
       onClick: () => setLibraryFilter(f.key),
     }
   })
@@ -312,9 +336,9 @@ export function useUtaNote() {
     text: tok.text,
     reading: tok.reading,
     role: tok.role,
-    bg: tok.type === 'particle' ? 'transparent' : 'rgba(255,255,255,0.05)',
-    border: tok.type === 'particle' ? '1px dashed rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
-    color: tok.type === 'particle' ? 'rgba(255,255,255,0.55)' : '#eceaf3',
+    bg: tok.type === 'particle' ? 'transparent' : 'var(--ink-05)',
+    border: tok.type === 'particle' ? '1px dashed var(--ink-18)' : '1px solid var(--ink-08)',
+    color: tok.type === 'particle' ? 'var(--ink-55)' : 'var(--text-body)',
     weight: tok.type === 'particle' ? 400 : 600,
   }))
 
@@ -346,6 +370,7 @@ export function useUtaNote() {
 
   return {
     isHome, isTasks, isCard, isSummary, isLibrary, isMe, isAbout, showTabBar, showModal, modalClosing,
+    themeClass: themeMode === 'light' ? 'theme-light' : '',
     streakDays, streakLabel,
     lyricsText, lyricsCount: lyricsText.length, setLyrics, fillSample, startBreakdown,
     songTitle, setSongTitle,
@@ -370,11 +395,12 @@ export function useUtaNote() {
     mySongs, importedCount: songs.filter((s) => !s.demo).length,
     currentDetail: detail,
     favoriteGlyph: isFav ? '★' : '☆',
-    favoriteColor: isFav ? '#e8c468' : 'rgba(255,255,255,0.4)',
+    favoriteColor: isFav ? 'var(--warning)' : 'var(--ink-4)',
     toggleFavorite, closeWordModal,
     currentMastery,
     currentMasteryLabel: MASTERY_LABEL[currentMastery],
     currentMasteryColor: MASTERY_COLOR[currentMastery],
+    currentMasteryBorder: MASTERY_BORDER[currentMastery],
     markAsMastered: () => markAsMastered(safeIndex),
     fontScale, fontScaleLabel, fontScaleOptions: FONT_SCALE_OPTIONS, setFontScaleAction,
     openAbout, closeAbout,
