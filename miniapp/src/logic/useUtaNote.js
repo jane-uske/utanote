@@ -5,6 +5,8 @@ import { loadSongs, addSong, deleteSong, loadMastery, getMastery, setMastery } f
 import { currentStreak, recordStudy } from './streak'
 import { parseLyrics, looksJapanese } from './parse'
 import { buildTtsLocalCacheKey, ensureTtsAsset, getCachedTtsAudioSrc, normalizeTtsText, resolveTtsAudioSrc, resolveTokenAudioText } from './tts'
+import { askLineAi, buildAiLocalKey, getCachedAiAnswer, cacheAiAnswer, aiErrorMessage } from './ai'
+import { COPY } from './copy'
 import { initFontScale, getFontScale, setFontScale as _setFontScale } from './sx'
 import { findEasterEgg, TAP_EGG_MESSAGE, TAP_EGG_THRESHOLD, TAP_EGG_COOLDOWN_MS } from './eastereggs'
 
@@ -29,10 +31,10 @@ const MASTERY_COLOR = { mastered: 'var(--success)', learning: 'var(--warning)', 
 const MASTERY_BORDER = { mastered: 'var(--success-soft)', learning: 'var(--warning-soft)', new: 'var(--ink-2)' }
 
 const FONT_SCALE_OPTIONS = [
-  { key: 0.9, label: '小' },
-  { key: 1, label: '标准' },
-  { key: 1.15, label: '大' },
-  { key: 1.3, label: '超大' },
+  { key: 1.2, label: '小' },
+  { key: 1.3, label: '标准' },
+  { key: 1.4, label: '大' },
+  { key: 1.5, label: '超大' },
 ]
 
 const TTS_VOICE_KEY = 'utanote.tts.voice'
@@ -81,6 +83,21 @@ function getSystemTheme() {
   } catch { return 'dark' }
 }
 
+// Manual theme preference. 'system' keeps the auto-follow behaviour; 'light'/
+// 'dark' pin it. Persisted so the choice survives restarts.
+const THEME_KEY = 'utanote.themePref'
+const THEME_OPTIONS = [
+  { key: 'system', label: '跟随系统' },
+  { key: 'light', label: '浅色' },
+  { key: 'dark', label: '深色' },
+]
+function loadThemePref() {
+  try {
+    const v = Taro.getStorageSync(THEME_KEY)
+    return v === 'light' || v === 'dark' ? v : 'system'
+  } catch { return 'system' }
+}
+
 // navigationStyle:'custom' means there's no native nav bar to align to, so any
 // custom header row has to be measured against the capsule (胶囊按钮) by hand.
 // navBarHeight mirrors the standard WeChat recipe — doubling the gap between
@@ -114,7 +131,10 @@ export function useUtaNote() {
   const [streakDays, setStreakDays] = useState(() => currentStreak())
   const [romajiOpen, setRomajiOpen] = useState(false)
   const [navDir, setNavDir] = useState('next')
-  const [themeMode, setThemeMode] = useState(() => getSystemTheme())
+  const [themePref, setThemePref] = useState(() => loadThemePref())
+  const [systemTheme, setSystemTheme] = useState(() => getSystemTheme())
+  // Effective theme: a manual pref wins; 'system' follows the OS (live via onThemeChange).
+  const themeMode = themePref === 'system' ? systemTheme : themePref
   const [favorites, setFavorites] = useState(() => loadFavorites())
   const [lyricsText, setLyricsText] = useState('')
   const [songTitle, setSongTitle] = useState('')
@@ -138,6 +158,12 @@ export function useUtaNote() {
   const [parseNotice, setParseNotice] = useState('')
   const [eggOpen, setEggOpen] = useState(false)
   const [eggFlash, setEggFlash] = useState('')
+  // AI singing coach — per-card, reset on every card navigation.
+  // status: idle | loading | done | error
+  const [aiCoach, setAiCoach] = useState({ status: 'idle', answer: null, error: '' })
+  // The localKey of the in-flight request; a response is dropped if the user
+  // has navigated to another card (or re-collapsed) since it was sent.
+  const aiReqRef = useRef('')
   const eggTapRef = useRef({ count: 0, coolUntil: 0 })
   const eggFlashTimerRef = useRef(null)
   const audioRef = useRef(null)
@@ -149,7 +175,7 @@ export function useUtaNote() {
   // library version, so this is best-effort — initial read still works.
   useEffect(() => {
     if (typeof Taro.onThemeChange !== 'function') return
-    const handler = (res) => setThemeMode(res && res.theme === 'light' ? 'light' : 'dark')
+    const handler = (res) => setSystemTheme(res && res.theme === 'light' ? 'light' : 'dark')
     Taro.onThemeChange(handler)
     return () => {
       if (typeof Taro.offThemeChange === 'function') Taro.offThemeChange(handler)
@@ -200,9 +226,13 @@ export function useUtaNote() {
   const setTab = (tab) => { setActiveTab(tab); setStudyPhase('tasks') }
   const goHome = () => setActiveTab('home')
   const fillSample = () => setLyricsText(sampleLyrics)
+  const resetAiCoach = () => {
+    aiReqRef.current = ''
+    setAiCoach({ status: 'idle', answer: null, error: '' })
+  }
   const openCard = (i) => {
     setActiveTab('study'); setStudyPhase('card'); setCardIndex(i)
-    setRomajiOpen(false); setShowModal(false)
+    setRomajiOpen(false); setShowModal(false); resetAiCoach()
     setStreakDays(recordStudy())
     // Auto-promote "new" → "learning" when the card is first viewed.
     if (activeSongId && getMastery(masteryMap, activeSongId, i) === 'new') {
@@ -219,12 +249,12 @@ export function useUtaNote() {
   // .card-in-next/.card-in-prev) — kept in sync for both button taps and swipes,
   // since swipe gestures call these same functions.
   const prevCard = () => {
-    setNavDir('prev'); setCardIndex((i) => Math.max(0, i - 1)); setRomajiOpen(false); setShowModal(false)
+    setNavDir('prev'); setCardIndex((i) => Math.max(0, i - 1)); setRomajiOpen(false); setShowModal(false); resetAiCoach()
   }
   const nextCard = () => {
     setNavDir('next')
     if (safeIndex >= total - 1) { setStudyPhase('summary'); return }
-    setCardIndex(safeIndex + 1); setRomajiOpen(false); setShowModal(false)
+    setCardIndex(safeIndex + 1); setRomajiOpen(false); setShowModal(false); resetAiCoach()
   }
   const toggleRomaji = () => setRomajiOpen((v) => !v)
   const openWordModal = (detail) => {
@@ -263,11 +293,15 @@ export function useUtaNote() {
     if (code === 'TEXT_TOO_LONG') {
       msg = '这句歌词太长了，暂不支持朗读'
     } else if (code === 'DAILY_LIMIT' || code === 'DAILY_USER_ASSET_LIMIT_EXCEEDED' || code === 'DAILY_CUSTOM_TEXT_LIMIT_EXCEEDED') {
-      msg = '今日可生成的学习音频额度已用完，已生成的内容仍可继续播放。'
+      msg = COPY.ttsQuotaUsedUp
     } else if (code === 'GLOBAL_TTS_LIMIT_EXCEEDED') {
-      msg = '今日语音生成较多，请稍后再试，已生成的内容仍可继续播放。'
+      msg = COPY.ttsGlobalBusy
     } else if (code === 'TTS_BUSY') {
-      msg = '语音生成繁忙，请稍后再试'
+      msg = COPY.ttsBusy
+    } else if (code === 'CONTENT_RISK') {
+      msg = COPY.ttsContentRisk
+    } else if (code === 'CONTENT_SAFETY_UNAVAILABLE') {
+      msg = '内容安全检查暂不可用，请稍后再试'
     } else {
       msg = '语音播放失败，请重试'
     }
@@ -310,8 +344,14 @@ export function useUtaNote() {
       stopTts()
       return
     }
-    // Determine audioText: use explicit audioText (for particles), then kana, then text
-    const ttsText = normalizeTtsText(audioText || text)
+    // Determine audioText: explicit audioText (tokens combine kanji + particle)
+    // wins; otherwise prefer the kana reading over raw kanji — the engine has
+    // to guess a kanji compound's reading itself (e.g. 夜風 → よかぜ) and can
+    // land on a wrong-but-plausible one (e.g. reading 夜 alone as よる), while
+    // kana is unambiguous. Furigana is space-separated per word for display,
+    // so collapse it into one continuous reading before sending it off.
+    const kanaReading = kana ? String(kana).replace(/\s+/g, '') : ''
+    const ttsText = normalizeTtsText(audioText || kanaReading || text)
     if (!ttsText) return
     if (ttsText.length > 120) {
       Taro.showToast({ title: '这句歌词太长了，暂不支持朗读', icon: 'none' })
@@ -423,6 +463,40 @@ export function useUtaNote() {
       kana: tok && tok.reading ? tok.reading : '',
     })
   }
+  // AI singing coach chip. Tap: fetch + expand (local cache → instant; the
+  // cloud function's global cache makes repeats quota-free anyway). Tap while
+  // open: collapse. The answer stays in the local cache, so re-opening is free.
+  const askSingingCoach = async () => {
+    if (!current || aiCoach.status === 'loading') return
+    if (aiCoach.status === 'done') { resetAiCoach(); return }
+    const payload = {
+      questionType: 'singing',
+      text: current.original,
+      // Same reading-over-kanji preference as TTS: collapsed furigana keeps
+      // the coach from guessing a kanji compound's reading wrong.
+      kana: (current.furigana || '').replace(/\s+/g, ''),
+    }
+    const localKey = buildAiLocalKey(payload)
+    const cached = getCachedAiAnswer(localKey)
+    if (cached) {
+      aiReqRef.current = ''
+      setAiCoach({ status: 'done', answer: cached, error: '' })
+      return
+    }
+    aiReqRef.current = localKey
+    setAiCoach({ status: 'loading', answer: null, error: '' })
+    try {
+      const r = await askLineAi(payload)
+      cacheAiAnswer(localKey, r.answer)
+      if (aiReqRef.current !== localKey) return // user navigated away meanwhile
+      setAiCoach({ status: 'done', answer: r.answer, error: '' })
+    } catch (e) {
+      if (aiReqRef.current !== localKey) return
+      setAiCoach({ status: 'error', answer: null, error: aiErrorMessage(e) })
+    } finally {
+      if (aiReqRef.current === localKey) aiReqRef.current = ''
+    }
+  }
   const openSongTasks = (id) => {
     setActiveSongId(id); setCardIndex(0); setActiveTab('study'); setStudyPhase('tasks')
   }
@@ -474,14 +548,16 @@ export function useUtaNote() {
       const lineCount = (lyricsText || '').split(/\r?\n/).filter((l) => l.trim()).length
       setParseStage(`正在解析 ${lineCount} 行歌词…`)
       const r = await parseLyrics(lyricsText)
-      setParseStage('解析完成，正在生成卡片…')
+      setParseStage(COPY.parseStageDone)
       const { song, songs: next } = addSong({ lyrics: lyricsText, sentences: r.sentences, title: songTitle.trim() || r.title || undefined })
       setSongs(next); setActiveSongId(song.id); setCardIndex(0)
       setActiveTab('study'); setStudyPhase('tasks')
       setSongTitle('')
       setStreakDays(recordStudy())
-      if (r.warning) setParseNotice(r.warning)
-      else if (r.source === 'local') setParseNotice('未配置 AI 解析，已生成本地分词草稿（读音/释义为占位）。在云函数配置 DEEPSEEK_KEY 后可自动生成完整内容。')
+      // Review-safe mode replaces the server's warning text (it mentions the
+      // AI pipeline) with a neutral fixed string; full mode shows it verbatim.
+      if (r.warning) setParseNotice(COPY.parsePartialWarning || r.warning)
+      else if (r.source === 'local') setParseNotice(COPY.parseNoticeLocal)
       else if (r.truncated) setParseNotice('歌词较长，本次仅解析了前 40 行。')
     } catch (e) {
       setParseError(e.message || '解析失败，请重试。')
@@ -514,8 +590,9 @@ export function useUtaNote() {
   const isLinePlayingSlow = !!playingTtsId && playingTtsId === slowLineId
   const playGlyph = isTtsLoading ? '…' : isLinePlaying ? '❚❚' : '▶'
   const playIconColor = isTtsLoading || isLinePlaying ? 'var(--accent-light)' : 'var(--ink-5)'
-  const playLabel = isTtsLoading ? '生成中' : isLinePlaying ? '播放中' : '朗读'
-  const slowLabel = isTtsLoadingSlow ? '生成中' : isLinePlayingSlow ? '慢速中' : '慢速'
+  const playLabel = isTtsLoading ? COPY.ttsLoadingLabel : isLinePlaying ? '播放中' : '朗读'
+  const slowLabel = isTtsLoadingSlow ? COPY.ttsLoadingLabel : isLinePlayingSlow ? '慢速中' : '慢速'
+  const slowChipLabel = isTtsLoadingSlow ? `慢速 · ${COPY.ttsLoadingLabel}` : isLinePlayingSlow ? '慢速 · 播放中' : COPY.slowChipIdle
   const slowColor = isTtsLoadingSlow || isLinePlayingSlow ? 'var(--accent-light)' : 'var(--ink-5)'
   const ttsColorFor = (id) => (ttsLoadingId === id || playingTtsId === id ? 'var(--accent-light)' : 'var(--ink-5)')
 
@@ -611,6 +688,8 @@ export function useUtaNote() {
   const isWordTtsLoading = ttsLoadingId === wordTtsId
   const isExampleTtsLoading = ttsLoadingId === exampleTtsId
 
+  // Style decisions (core-word chip vs. light particle) live in index.jsx —
+  // this just passes through the raw type + playing state.
   const tokenViews = ((current && current.tokens) || []).map((tok, i) => {
     const id = currentTtsBaseId() + ':token:' + i + ':' + (tok.text || '')
     const active = ttsLoadingId === id || playingTtsId === id
@@ -619,10 +698,8 @@ export function useUtaNote() {
       text: tok.text,
       reading: tok.reading,
       role: tok.role,
-      bg: active ? 'rgba(165,168,236,0.14)' : tok.type === 'particle' ? 'transparent' : 'var(--ink-05)',
-      border: active ? '1px solid rgba(165,168,236,0.52)' : tok.type === 'particle' ? '1px dashed var(--ink-18)' : '1px solid var(--ink-08)',
-      color: active ? 'var(--accent-light)' : tok.type === 'particle' ? 'var(--ink-55)' : 'var(--text-body)',
-      weight: active || tok.type !== 'particle' ? 600 : 400,
+      type: tok.type,
+      active,
       onClick: () => playTokenTts(tok, i),
     }
   })
@@ -645,6 +722,12 @@ export function useUtaNote() {
 
   const currentMastery = activeSongId ? getMastery(masteryMap, activeSongId, safeIndex) : 'new'
 
+  const setThemePrefAction = (pref) => {
+    if (!THEME_OPTIONS.some((o) => o.key === pref)) return
+    setThemePref(pref)
+    try { Taro.setStorageSync(THEME_KEY, pref) } catch { /* ignore */ }
+  }
+  const themePrefLabel = (THEME_OPTIONS.find((o) => o.key === themePref) || THEME_OPTIONS[0]).label
   const setFontScaleAction = (scale) => {
     _setFontScale(scale)
     setFontScaleState(scale)
@@ -683,11 +766,13 @@ export function useUtaNote() {
     prevOpacity: safeIndex === 0 ? 0.4 : 1,
     nextLabel: safeIndex >= total - 1 ? '完成' : '下一句',
     togglePlay: toggleLineTts, toggleSlow: toggleLineTtsSlow, playGlyph, playIconColor, playLabel, isTtsLoading, isLinePlaying,
-    slowLabel, slowColor, ttsSlow, setTtsSlow, playWordTts, playExampleTts,
+    slowLabel, slowChipLabel, slowColor, ttsSlow, setTtsSlow, playWordTts, playExampleTts,
     wordPlayIconColor: ttsColorFor(wordTtsId),
     examplePlayIconColor: ttsColorFor(exampleTtsId),
     isWordTtsLoading, isExampleTtsLoading,
     exampleEgg, eggOpen, toggleEgg, eggFlash,
+    aiCoach, askSingingCoach,
+    aiSingingChipLabel: aiCoach.status === 'loading' ? COPY.assistantChipLoading : aiCoach.status === 'done' ? '收起讲解' : '这句怎么唱？',
     summaryStats, summaryStudied: studiedSentences, summaryTotal: total, summaryMastered: masteredSentences, masteryProgressPct, shareTitle, goHome,
     librarySearch, setSearch, libraryFilterChips, libraryStats, filteredVocab,
     mySongs, importedCount: songs.filter((s) => !s.demo).length,
@@ -702,6 +787,7 @@ export function useUtaNote() {
     markAsMastered: () => markAsMastered(safeIndex),
     fontScale, fontScaleLabel, fontScaleOptions: FONT_SCALE_OPTIONS, setFontScaleAction,
     ttsVoice, ttsVoiceLabel, ttsVoiceOptions: TTS_VOICE_OPTIONS, setTtsVoice,
+    themePref, themePrefLabel, themeOptions: THEME_OPTIONS, setThemePrefAction,
     openAbout, closeAbout,
     navBarPaddingTop: navMetrics.navBarPaddingTop,
     navBarHeight: navMetrics.navBarHeight,

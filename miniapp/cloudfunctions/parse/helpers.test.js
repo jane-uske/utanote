@@ -1,5 +1,13 @@
 const assert = require('assert')
-const { extractJSON, chunk, runWithConcurrency, mergeChunkResults, looksJapanese } = require('./helpers')
+const {
+  extractJSON,
+  chunk,
+  runWithConcurrency,
+  mergeChunkResults,
+  looksJapanese,
+  splitContentForSafety,
+  contentSafetyDecision,
+} = require('./helpers')
 
 // ── extractJSON: fenced, bare, prose-padded, empty ───────────────
 assert.deepStrictEqual(extractJSON('{"sentences":[]}'), { sentences: [] })
@@ -37,6 +45,15 @@ assert.strictEqual(looksJapanese('Hello world, this is English lyrics'), false)
 assert.strictEqual(looksJapanese(''), false)
 assert.strictEqual(looksJapanese('   '), false)
 assert.strictEqual(looksJapanese(null), false)
+
+// ── content safety helpers: chunking and WeChat response decisions ──
+assert.deepStrictEqual(splitContentForSafety('  あいう  ', 2), ['あい', 'う'])
+assert.deepStrictEqual(splitContentForSafety('', 2), [])
+assert.strictEqual(splitContentForSafety('あ'.repeat(4500)).length, 3)
+assert.deepStrictEqual(contentSafetyDecision({ errCode: 0, result: { suggest: 'pass', label: 100 } }), { ok: true })
+assert.strictEqual(contentSafetyDecision({ errCode: 0, result: { suggest: 'risky', label: 20001 } }).code, 'CONTENT_RISK')
+assert.strictEqual(contentSafetyDecision({ errcode: 87014 }).code, 'CONTENT_RISK')
+assert.strictEqual(contentSafetyDecision({ errCode: -1 }).code, 'CONTENT_SAFETY_UNAVAILABLE')
 
 async function main() {
   // ── runWithConcurrency: order preserved, values correct ────────

@@ -28,11 +28,14 @@ const {
   userLimitForSource,
   userCounterForSource,
   userLimitCodeForSource,
+  splitContentForSafety,
+  contentSafetyDecision,
 } = require('./helpers')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
+const CONTENT_SECURITY_SCENE = Number(process.env.WX_CONTENT_SECURITY_SCENE || 2)
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10)
@@ -173,6 +176,43 @@ function success(payload) {
   return { ok: true, ...payload }
 }
 
+async function checkTextContentSafety({ openid, content }) {
+  if (!openid) {
+    return { ok: false, code: 'CONTENT_SAFETY_UNAVAILABLE', error: '无法完成内容安全检查，请稍后再试。' }
+  }
+  const chunks = splitContentForSafety(content)
+  if (!chunks.length) return { ok: true }
+  if (!cloud.openapi || !cloud.openapi.security || typeof cloud.openapi.security.msgSecCheck !== 'function') {
+    return { ok: false, code: 'CONTENT_SAFETY_UNAVAILABLE', error: '内容安全检查暂不可用，请稍后再试。' }
+  }
+
+  for (const part of chunks) {
+    let resp
+    try {
+      resp = await cloud.openapi.security.msgSecCheck({
+        version: 2,
+        openid,
+        scene: CONTENT_SECURITY_SCENE,
+        content: part,
+      })
+    } catch (e) {
+      console.warn('content safety check failed:', e)
+      return { ok: false, code: 'CONTENT_SAFETY_UNAVAILABLE', error: '内容安全检查暂不可用，请稍后再试。' }
+    }
+    const decision = contentSafetyDecision(resp)
+    if (!decision.ok) {
+      return {
+        ok: false,
+        code: decision.code,
+        error: decision.code === 'CONTENT_RISK'
+          ? '朗读文本暂不支持生成语音，请修改后重试。'
+          : '内容安全检查暂不可用，请稍后再试。',
+      }
+    }
+  }
+  return { ok: true }
+}
+
 exports.main = async (event = {}) => {
   const { OPENID } = cloud.getWXContext()
   if (!OPENID) return { ok: false, code: 'NO_OPENID', error: '无法识别用户，请稍后再试。' }
@@ -197,6 +237,11 @@ exports.main = async (event = {}) => {
   if (!textCheck.ok) return { ok: false, code: textCheck.code, error: textCheck.message }
   const audioText = textCheck.text
   const displayText = String(event.text || audioText)
+
+  if (!isFreeSource(source)) {
+    const safety = await checkTextContentSafety({ openid: OPENID, content: audioText })
+    if (!safety.ok) return safety
+  }
 
   const assetKey = buildAssetKey({ source, songId, cardId, lineId, assetType, chunkKey, voice, speaker, speedScale, audioText })
   const cacheKey = buildCacheKey({ text: audioText, voice, speaker, speedScale, pitchScale, intonationScale })

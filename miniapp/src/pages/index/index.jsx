@@ -3,6 +3,7 @@ import { useShareAppMessage } from '@tarojs/taro'
 import { View, Text, Textarea, Input, ScrollView, Button, Image } from '@tarojs/components'
 import { useUtaNote } from '../../logic/useUtaNote'
 import { sx } from '../../logic/sx'
+import { COPY } from '../../logic/copy'
 import appLogo from '../../assets/app-logo.png'
 import './index.css'
 
@@ -107,12 +108,7 @@ export default function Index() {
               </View>
 
               <View style={sx({ display: 'flex', flexWrap: 'wrap', gap: 8 })}>
-                {[
-                  { icon: '🤖', title: 'AI 秒速拆解', desc: '粘贴歌词自动拆成逐句学习卡片' },
-                  { icon: '🔊', title: '真人语音跟读', desc: 'AI 配音朗读，地道发音张口就来' },
-                  { icon: '🈶', title: '逐词语法拆解', desc: '主语/助词/谓语高亮，语感看得见' },
-                  { icon: '📚', title: '生词自动入库', desc: '点词收藏，掌握度进度全追踪' },
-                ].map((f) => (
+                {COPY.homeFeatures.map((f) => (
                   <View key={f.title} style={sx({ width: 'calc(50% - 4px)', boxSizing: 'border-box', padding: '12px 12px 13px', borderRadius: 14, background: 'var(--ink-04)', border: '1px solid var(--ink-08)', display: 'flex', flexDirection: 'column', gap: 3 })}>
                     <View style={sx({ fontSize: 17 })}>{f.icon}</View>
                     <View style={sx({ fontSize: 12.5, fontWeight: 600, color: 'var(--text-strong)' })}>{f.title}</View>
@@ -124,12 +120,11 @@ export default function Index() {
               <View>
                 <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 })}>
                   <Text style={sx({ fontSize: 15, fontWeight: 600, color: 'var(--text-strong)' })}>导入歌词</Text>
-                  <Text onClick={v.fillSample} style={sx({ fontSize: 12.5, color: 'var(--ink-5)' })}>示例歌词</Text>
                 </View>
                 <Input
                   value={v.songTitle}
                   onInput={(e) => v.setSongTitle(e.detail.value)}
-                  placeholder="输入歌曲名称（可选，留空由 AI 自动取名）"
+                  placeholder={COPY.songTitlePlaceholder}
                   placeholderStyle={PLACEHOLDER}
                   style={sx({ width: '100%', height: 42, boxSizing: 'border-box', background: 'var(--ink-04)', border: '1px solid var(--ink-08)', borderRadius: 14, padding: '0 14px', fontSize: 13.5, color: 'var(--text-body)', marginBottom: 10 })}
                 />
@@ -144,13 +139,16 @@ export default function Index() {
                   />
                   <View style={sx({ position: 'absolute', right: 12, bottom: 10, fontSize: 11, color: 'var(--ink-3)' })}>{v.lyricsCount} / 5000</View>
                 </View>
+                <View style={sx({ marginTop: 8, fontSize: 11, color: 'var(--ink-4)', lineHeight: 1.55 })}>
+                  {COPY.lyricsNotice}
+                </View>
               </View>
 
               {v.parseError ? <View onClick={v.dismissParseError} style={sx(errBanner)}>{v.parseError}（点击关闭）</View> : null}
               {v.parseNotice ? <View onClick={v.dismissParseNotice} style={sx(noticeBanner)}>{v.parseNotice}（点击关闭）</View> : null}
 
               <View onClick={v.parsing ? undefined : v.startBreakdown} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ ...primaryBtn, opacity: v.parsing ? 0.6 : 1 })}>
-                {v.parsing ? '解析中…' : '开始拆解 ✨'}
+                {v.parsing ? '解析中…' : COPY.startButton}
               </View>
             </View>
           )}
@@ -205,38 +203,40 @@ export default function Index() {
                     block, replaying the direction-matched card-in slide. */}
                 <View key={v.cardPositionLabel} className={v.cardAnimClass} style={sx({ display: 'flex', flexDirection: 'column', gap: 18 })}>
                 <View>
-                  <View style={sx({ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 })}>
-                    <View style={sx({ fontSize: 13, color: 'var(--ink-45)' })}>今日第 {v.currentSentence.num} 句</View>
-                    <View onClick={v.togglePlay} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: v.playIconColor, background: 'var(--ink-05)', border: '1px solid var(--ink-08)', borderRadius: 16, padding: '4px 9px' })}>
-                      <Text>🔊</Text><Text>{v.playLabel}</Text>
-                    </View>
-                    <View onClick={v.toggleSlow} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: v.slowColor, background: 'var(--ink-05)', border: '1px solid var(--ink-08)', borderRadius: 16, padding: '4px 9px' })}>
-                      <Text style={sx({ lineHeight: 1, transform: 'translateY(-1.5px)' })}>🐢</Text><Text>{v.slowLabel}</Text>
-                    </View>
-                  </View>
-                  <Text style={sx({ fontSize: 21, lineHeight: 1.6, color: 'var(--text-heading)', fontWeight: 600 })}>
+                  <View style={sx({ fontSize: 12, color: 'var(--ink-45)', letterSpacing: 0.5, marginBottom: 14 })}>今日第 {v.currentSentence.num} 句</View>
+                  <Text style={sx({ fontSize: 23, lineHeight: 1.75, color: 'var(--text-heading)', fontWeight: 600, letterSpacing: 0.3 })}>
                     <Text>{v.currentSplit.pre}</Text>
-                    <Text onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ color: 'var(--accent-light)', fontWeight: 700, textDecoration: 'underline' })}>{v.currentSplit.word}</Text>
+                    <Text onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ color: 'var(--accent-light)', fontWeight: 700, background: 'rgba(165,168,236,0.16)', borderRadius: 6, padding: '1px 6px' })}>{v.currentSplit.word}</Text>
                     <Text>{v.currentSplit.post}</Text>
                   </Text>
-                  <View onClick={() => v.openWordModal(v.currentSentence.detail)} style={sx({ marginTop: 12, fontSize: 11.5, color: 'var(--accent-light)', border: '1px solid rgba(165,168,236,0.35)', padding: '6px 12px', borderRadius: 20, width: 'fit-content' })}>点击「{v.currentSentence.highlightWord}」查看详情 →</View>
+                  <View style={sx({ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.5, marginTop: 10 })}>{v.currentSentence.translation}</View>
                 </View>
 
                 <View>
                   <View style={sx({ fontSize: 11.5, color: 'var(--ink-35)', marginBottom: 4 })}>整句语法结构</View>
-                  <View style={sx({ fontSize: 12, color: 'var(--accent-light)', marginBottom: 8 })}>{v.currentSentence.structure}</View>
-                  <View style={sx({ display: 'flex', flexWrap: 'wrap', gap: 6 })}>
-                    {v.tokenViews.map((tok) => (
-                      <View key={tok.key} onClick={tok.onClick} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ textAlign: 'center', padding: '8px 11px', borderRadius: 8, background: tok.bg, border: tok.border })}>
-                        {tok.reading ? <View style={sx({ fontSize: 9, color: 'var(--ink-4)', lineHeight: 1.3 })}>{tok.reading}</View> : null}
-                        <View style={sx({ fontSize: 13, color: tok.color, fontWeight: tok.weight })}>{tok.text}</View>
-                        <View style={sx({ fontSize: 9, color: 'var(--ink-4)', marginTop: 2, whiteSpace: 'nowrap' })}>{tok.role}</View>
-                      </View>
-                    ))}
+                  <View style={sx({ fontSize: 12, color: 'var(--accent-light)', marginBottom: 10 })}>{v.currentSentence.structure}</View>
+                  <View style={sx({ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 5 })}>
+                    {v.tokenViews.map((tok) => {
+                      const isParticle = tok.type === 'particle'
+                      return (
+                        <View key={tok.key} onClick={tok.onClick} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx(isParticle ? {
+                          textAlign: 'center', padding: '7px 5px 0', borderRadius: 6,
+                          background: tok.active ? 'rgba(165,168,236,0.14)' : 'transparent',
+                        } : {
+                          textAlign: 'center', padding: '9px 12px', borderRadius: 10,
+                          background: tok.active ? 'rgba(165,168,236,0.16)' : 'var(--ink-06)',
+                          border: tok.active ? '1px solid rgba(165,168,236,0.5)' : '1px solid var(--ink-1)',
+                        })}>
+                          {tok.reading ? <View style={sx({ fontSize: isParticle ? 8 : 9, color: 'var(--ink-4)', lineHeight: 1.3 })}>{tok.reading}</View> : null}
+                          <View style={sx({ fontSize: isParticle ? 12 : 13.5, color: tok.active ? 'var(--accent-light)' : isParticle ? 'var(--ink-5)' : 'var(--text-body)', fontWeight: isParticle ? 400 : 600 })}>{tok.text}</View>
+                          <View style={sx({ fontSize: 9, color: 'var(--ink-4)', marginTop: 2, whiteSpace: 'nowrap' })}>{tok.role}</View>
+                        </View>
+                      )
+                    })}
                   </View>
                 </View>
 
-                <View onClick={v.toggleRomaji} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-45)', border: '1px solid var(--ink-1)', borderRadius: 20, padding: '6px 12px', width: 'fit-content' })}>
+                <View onClick={v.toggleRomaji} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-5)', width: 'fit-content' })}>
                   <Text>{v.romajiToggleLabel}</Text>
                   <View style={sx({ width: 6, height: 6, borderRight: '1.5px solid var(--ink-45)', borderBottom: '1.5px solid var(--ink-45)', transform: v.romajiArrowRotate, transition: 'transform 0.25s ease' })} />
                 </View>
@@ -249,17 +249,67 @@ export default function Index() {
                 )}
 
                 <View>
-                  <View style={sx({ fontSize: 11.5, color: 'var(--ink-35)', marginBottom: 6 })}>中文释义</View>
-                  <View style={sx({ fontSize: 14, color: 'var(--text-soft)', lineHeight: 1.5 })}>{v.currentSentence.translation}</View>
+                  <View style={sx({ fontSize: 11.5, color: 'var(--ink-35)', marginBottom: 6 })}>发音提示</View>
+                  <View style={sx({ display: 'flex', gap: 8 })}>
+                    {(v.currentSentence.tips || []).map((tip, i) => (
+                      <View key={i} style={sx({ flex: 1, textAlign: 'center', padding: '9px 4px', background: 'var(--ink-04)', borderRadius: 10, border: '1px solid var(--ink-07)' })}>
+                        <View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>{tip.main}</View>
+                        <View style={sx({ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 })}>{tip.label}</View>
+                      </View>
+                    ))}
+                  </View>
                 </View>
 
-                <View style={sx({ display: 'flex', gap: 8 })}>
-                  {(v.currentSentence.tips || []).map((tip, i) => (
-                    <View key={i} style={sx({ flex: 1, textAlign: 'center', padding: '9px 4px', background: 'var(--ink-04)', borderRadius: 10, border: '1px solid var(--ink-07)' })}>
-                      <View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>{tip.main}</View>
-                      <View style={sx({ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 })}>{tip.label}</View>
+                {/* AI 学习助手 — fixed questions only (no free-text chat).
+                    P0 ships the singing coach:「这句怎么唱？」goes through the
+                    askLine cloud function (globally cached, cache hits are
+                    quota-free); the other chips stay as an inert preview. */}
+                <View style={sx({ borderRadius: 14, background: 'var(--ink-03)', border: '1px solid var(--ink-06)', padding: '14px 15px', display: 'flex', flexDirection: 'column', gap: 10 })}>
+                  <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
+                    <View style={sx({ fontSize: 12.5, fontWeight: 600, color: 'var(--text-body)' })}>{COPY.assistantTitle}</View>
+                    <View style={sx({ fontSize: 10, color: 'var(--accent-light)', padding: '2px 8px', borderRadius: 10, background: 'rgba(165,168,236,0.15)' })}>{COPY.assistantBadge}</View>
+                  </View>
+                  <View style={sx({ display: 'flex', flexWrap: 'wrap', gap: 7 })}>
+                    <View
+                      onClick={v.askSingingCoach}
+                      style={sx({
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        color: 'var(--accent-light)',
+                        padding: '7px 12px',
+                        borderRadius: 20,
+                        background: 'rgba(165,168,236,0.15)',
+                        border: '1px solid rgba(165,168,236,0.4)',
+                        opacity: v.aiCoach.status === 'loading' ? 0.6 : 1,
+                      })}
+                    >♪ {v.aiSingingChipLabel}</View>
+                    {COPY.assistantPreviewChips.map((q) => (
+                      <View key={q} style={sx({ fontSize: 11.5, color: 'var(--ink-35)', padding: '7px 12px', borderRadius: 20, background: 'var(--ink-04)', border: '1px solid var(--ink-07)' })}>{q}</View>
+                    ))}
+                  </View>
+                  {v.aiCoach.status === 'error' && (
+                    <View style={sx({ fontSize: 11, color: 'var(--warning)' })}>{v.aiCoach.error}</View>
+                  )}
+                  {v.aiCoach.status === 'done' && v.aiCoach.answer && (
+                    <View style={sx({ display: 'flex', flexDirection: 'column', gap: 9 })}>
+                      {!!v.aiCoach.answer.kanaBeats && (
+                        <View style={sx({ padding: '9px 10px', borderRadius: 10, background: 'var(--ink-04)', border: '1px solid var(--ink-07)', textAlign: 'center' })}>
+                          <View style={sx({ fontSize: 10, color: 'var(--ink-35)', marginBottom: 3 })}>按音拍唱 · 一拍一音</View>
+                          <View style={sx({ fontSize: 13, color: 'var(--text-body)', letterSpacing: 1, lineHeight: 1.7 })}>{v.aiCoach.answer.kanaBeats}</View>
+                        </View>
+                      )}
+                      {(v.aiCoach.answer.tips || []).map((tip, i) => (
+                        <View key={i} style={sx({ display: 'flex', flexDirection: 'column', gap: 2 })}>
+                          <View style={sx({ fontSize: 11.5, fontWeight: 600, color: 'var(--accent-light)' })}>{tip.title}</View>
+                          <View style={sx({ fontSize: 11.5, color: 'var(--ink-5)', lineHeight: 1.6 })}>{tip.detail}</View>
+                        </View>
+                      ))}
+                      {!!v.aiCoach.answer.watchOut && (
+                        <View style={sx({ fontSize: 11.5, color: 'var(--warning)', lineHeight: 1.6 })}>⚠ {v.aiCoach.answer.watchOut}</View>
+                      )}
+                      <View style={sx({ fontSize: 9.5, color: 'var(--ink-3)', textAlign: 'right' })}>{COPY.assistantFooter}</View>
                     </View>
-                  ))}
+                  )}
                 </View>
                 </View>
               </View>
@@ -384,6 +434,17 @@ export default function Index() {
               <View>
                 <View style={sx({ fontSize: 13, fontWeight: 600, color: 'var(--text-body)', marginBottom: 8 })}>设置</View>
                 <View style={sx({ display: 'flex', flexDirection: 'column', borderRadius: 13, background: 'var(--ink-04)', border: '1px solid var(--ink-06)', overflow: 'hidden' })}>
+                  <View style={sx({ padding: '13px 14px', borderBottom: '1px solid var(--ink-06)' })}>
+                    <View style={sx({ display: 'flex', alignItems: 'center', fontSize: 13.5, color: 'var(--text-body)', marginBottom: 10 })}><View style={sx({ flex: 1 })}>深浅模式</View><View style={sx({ color: 'var(--ink-4)', fontSize: 12 })}>{v.themePrefLabel}</View></View>
+                    <View style={sx({ display: 'flex', gap: 8 })}>
+                      {v.themeOptions.map((opt) => {
+                        const active = v.themePref === opt.key
+                        return (
+                          <View key={opt.key} onClick={() => v.setThemePrefAction(opt.key)} style={sx({ flex: 1, textAlign: 'center', padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: active ? 600 : 400, color: active ? 'var(--accent-light)' : 'var(--ink-5)', background: active ? 'rgba(165,168,236,0.15)' : 'var(--ink-04)', border: active ? '1px solid rgba(165,168,236,0.4)' : '1px solid var(--ink-07)' })}>{opt.label}</View>
+                        )
+                      })}
+                    </View>
+                  </View>
 	                  <View style={sx({ padding: '13px 14px', borderBottom: '1px solid var(--ink-06)' })}>
 	                    <View style={sx({ display: 'flex', alignItems: 'center', fontSize: 13.5, color: 'var(--text-body)', marginBottom: 10 })}><View style={sx({ flex: 1 })}>字体大小</View><View style={sx({ color: 'var(--ink-4)', fontSize: 12 })}>{v.fontScaleLabel}</View></View>
 	                    <View style={sx({ display: 'flex', gap: 8 })}>
@@ -422,7 +483,7 @@ export default function Index() {
               </View>
 
               <View style={sx({ fontSize: 13.5, color: 'var(--text-soft)', lineHeight: 1.8, textAlign: 'center' })}>
-                把一首日语歌拆成可学会的每一句。通过 AI 解析歌词，为每句生成注音、翻译、语法讲解和词汇卡片，让你在喜欢的音乐中自然习得日语。
+                {COPY.aboutIntro}
               </View>
 
               <View style={sx({ borderRadius: 13, background: 'var(--ink-04)', border: '1px solid var(--ink-06)', padding: '14px 16px' })}>
@@ -431,26 +492,20 @@ export default function Index() {
                   <View style={sx({ fontSize: 13, fontWeight: 600, color: 'var(--text-body)' })}>隐私优先</View>
                 </View>
                 <View style={sx({ fontSize: 12, color: 'var(--ink-55)', lineHeight: 1.7 })}>
-                  你的歌词、收藏、学习进度等所有数据均保存在本设备本地存储中，不上传云端、不同步服务器。AI 解析仅将歌词文本发送至 DeepSeek 进行语法分析，不会关联任何个人信息。卸载小程序即彻底删除所有数据。
+                  {COPY.aboutPrivacy}
                 </View>
               </View>
 
               <View style={sx({ borderRadius: 13, background: 'var(--ink-04)', border: '1px solid var(--ink-06)', overflow: 'hidden' })}>
-                <View style={sx({ padding: '12px 14px', borderBottom: '1px solid var(--ink-06)', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>开发者</View><View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>rare</View></View>
-                <View style={sx({ padding: '12px 14px', borderBottom: '1px solid var(--ink-06)', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>TTS 引擎</View><View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>VOICEVOX</View></View>
-                <View style={sx({ padding: '12px 14px', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>AI 引擎</View><View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>DeepSeek</View></View>
+                {COPY.aboutInfoRows.map((row, i) => (
+                  <View key={row.label} style={sx({ padding: '12px 14px', borderBottom: i < COPY.aboutInfoRows.length - 1 ? '1px solid var(--ink-06)' : 'none', display: 'flex' })}><View style={sx({ fontSize: 12, color: 'var(--ink-4)', width: 70, flexShrink: 0 })}>{row.label}</View><View style={sx({ fontSize: 12.5, color: 'var(--text-body)' })}>{row.value}</View></View>
+                ))}
               </View>
 
               <View>
                 <View style={sx({ fontSize: 13, fontWeight: 600, color: 'var(--text-body)', marginBottom: 10 })}>未来计划 🚀</View>
                 <View style={sx({ display: 'flex', flexDirection: 'column', gap: 8 })}>
-                  {[
-                    { icon: '🎤', text: 'AI 评分带唱 & 教唱模式' },
-                    { icon: '🎯', text: '每日学习目标与打卡' },
-                    { icon: '📊', text: '学习数据统计与进度追踪' },
-                    { icon: '🃏', text: '间隔重复记忆曲线复习' },
-                    { icon: '👥', text: '分享成就卡片给好友' },
-                  ].map((item) => (
+                  {COPY.futurePlans.map((item) => (
                     <View key={item.text} style={sx({ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, background: 'var(--ink-03)', border: '1px solid var(--ink-06)' })}>
                       <View style={sx({ fontSize: 16, flexShrink: 0 })}>{item.icon}</View>
                       <View style={sx({ fontSize: 12.5, color: 'var(--ink-65)' })}>{item.text}</View>
@@ -506,21 +561,32 @@ export default function Index() {
       {/* ============ CARD ACTION BAR (docked to viewport bottom, like the tab bar) ============ */}
       {v.isCard && (
         <View style={sx({ padding: '10px 22px 22px', display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--ink-06)', background: 'var(--bg-bar)' })}>
-          <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 })}>
-            <View onClick={v.prevCard} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'var(--ink-05)', color: 'var(--ink-6)', fontSize: 13, opacity: v.prevOpacity })}>‹ 上一句</View>
-            <View onClick={v.togglePlay} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, color: '#fff', boxShadow: '0 6px 16px rgba(107,112,207,0.4)', flexShrink: 0 })}>
-              <View style={sx({ fontSize: 17, lineHeight: 1 })}>{v.playGlyph}</View>
+          <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22 })}>
+            <View onClick={v.prevCard} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 3, padding: '10px 4px', color: 'var(--ink-5)', fontSize: 13, opacity: v.prevOpacity })}>
+              <Text>‹</Text><Text>上一句</Text>
+            </View>
+            <View onClick={v.togglePlay} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 60, height: 60, borderRadius: '50%', background: 'linear-gradient(135deg, #6b70cf, #8489e0)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, color: '#fff', boxShadow: '0 8px 20px rgba(107,112,207,0.38)', flexShrink: 0 })}>
+              <View style={sx({ fontSize: 18, lineHeight: 1 })}>{v.playGlyph}</View>
               <View style={sx({ fontSize: 9.5, lineHeight: 1.2 })}>{v.playLabel}</View>
             </View>
-            <View onClick={v.nextCard} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ padding: '12px 20px', borderRadius: 20, background: 'var(--ink-05)', color: 'var(--ink-6)', fontSize: 13 })}>{v.nextLabel} ›</View>
+            <View onClick={v.nextCard} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ display: 'flex', alignItems: 'center', gap: 3, padding: '10px 4px', color: 'var(--ink-5)', fontSize: 13 })}>
+              <Text>{v.nextLabel}</Text><Text>›</Text>
+            </View>
           </View>
 
+          {/* Auxiliary (慢速) vs. status (已掌握 — a state pill that doubles
+              as the mark-as-mastered action only while still unmastered). */}
           <View style={sx({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 })}>
-            <View onClick={v.toggleSlow} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 11, color: v.slowColor, background: 'var(--ink-05)', border: '1px solid var(--ink-08)', borderRadius: 16, padding: '6px 14px' })}>🐢 {v.slowLabel}</View>
-            <View style={sx({ fontSize: 12, color: v.currentMasteryColor, background: 'var(--ink-04)', padding: '5px 12px', borderRadius: 16, border: `1px solid ${v.currentMasteryBorder}` })}>{v.currentMasteryLabel}</View>
-            {v.currentMastery !== 'mastered' && (
-              <View onClick={v.markAsMastered} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 12, color: 'var(--success)', background: 'rgba(142,214,168,0.1)', padding: '5px 14px', borderRadius: 16, border: '1px solid rgba(142,214,168,0.3)' })}>标记已掌握 ✓</View>
-            )}
+            <View onClick={v.toggleSlow} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 11.5, color: v.slowColor, background: 'var(--ink-04)', border: '1px solid var(--ink-07)', borderRadius: 16, padding: '6px 13px' })}>{v.slowChipLabel}</View>
+            <View
+              onClick={v.currentMastery !== 'mastered' ? v.markAsMastered : undefined}
+              className={v.currentMastery !== 'mastered' ? 'tap' : ''}
+              hoverClass={v.currentMastery !== 'mastered' ? 'press' : ''}
+              hoverStartTime={0} hoverStayTime={60}
+              style={sx({ fontSize: 11.5, color: v.currentMasteryColor, background: v.currentMastery === 'mastered' ? 'var(--success-soft)' : 'var(--ink-04)', padding: '6px 13px', borderRadius: 16, border: `1px solid ${v.currentMasteryBorder}` })}
+            >
+              {v.currentMastery === 'mastered' ? '✓ 已掌握' : `${v.currentMasteryLabel} · 标记已掌握`}
+            </View>
           </View>
         </View>
       )}
@@ -542,7 +608,7 @@ export default function Index() {
         <View style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
           <View style={sx({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '0 32px' })}>
             <View style={sx({ width: 44, height: 44, border: '3px solid var(--ink-15)', borderTopColor: 'var(--accent-light)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
-            <View style={sx({ fontSize: 15, color: 'var(--text-body)', fontWeight: 600 })}>{v.parseStage || 'AI 正在解析歌词…'}</View>
+            <View style={sx({ fontSize: 15, color: 'var(--text-body)', fontWeight: 600 })}>{v.parseStage || COPY.parseOverlayDefault}</View>
             {v.parseElapsed > 0 && (
               <View style={sx({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 })}>
                 <View style={sx({ fontSize: 12, color: 'var(--ink-5)' })}>已等待 {v.parseElapsed} 秒</View>
@@ -552,7 +618,7 @@ export default function Index() {
               </View>
             )}
             <View style={sx({ fontSize: 11, color: 'var(--ink-35)', textAlign: 'center', lineHeight: 1.6 })}>
-              {v.parseElapsed < 5 ? '分批并发请求 AI 中，通常 10~15 秒完成' : v.parseElapsed < 15 ? '正在等待 AI 返回结构化解析结果…' : '歌词较长，请耐心等待，即将完成'}
+              {v.parseElapsed < 5 ? COPY.parseOverlayHintEarly : v.parseElapsed < 15 ? COPY.parseOverlayHintMid : '歌词较长，请耐心等待，即将完成'}
             </View>
           </View>
         </View>
@@ -561,80 +627,86 @@ export default function Index() {
       {/* ============ WORD MODAL ============ */}
       {v.showModal && (
         <View onClick={v.closeWordModal} className={'modal-mask' + (v.modalClosing ? ' closing' : '')} style={sx({ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--overlay)', zIndex: 40, display: 'flex', alignItems: 'flex-end' })}>
-          <ScrollView scrollY catchMove onClick={(e) => e.stopPropagation()} className={'modal-sheet' + (v.modalClosing ? ' closing' : '')} style={sx({ width: '100%', maxHeight: '78%', background: 'var(--surface-sheet)', borderRadius: '22px 22px 0 0', border: '1px solid var(--ink-08)', borderBottom: 'none' })}>
-            <View style={sx({ padding: '14px 20px 26px', display: 'flex', flexDirection: 'column', gap: 14 })}>
-              <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                <View style={sx({ fontSize: 13, color: 'var(--ink-4)' })}>词语详情</View>
-                <View onClick={v.closeWordModal} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 36, height: 36, marginRight: -8, borderRadius: '50%', background: 'var(--ink-07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: 'var(--ink-65)', flexShrink: 0 })}>✕</View>
+          {/* `78%` needs the mask's percentage height to resolve correctly
+              through scroll-view's own layout — unreliable on-device, and it
+              was clipping the sheet's bottom content with no way to scroll
+              to it. `vh` sidesteps the percentage chain entirely (still a
+              cap, not a fixed height — short entries still shrink to fit). */}
+          <ScrollView scrollY catchMove onClick={(e) => e.stopPropagation()} className={'modal-sheet' + (v.modalClosing ? ' closing' : '')} style={sx({ width: '100%', maxHeight: '78vh', background: 'var(--surface-sheet)', borderRadius: '22px 22px 0 0', border: '1px solid var(--ink-08)', borderBottom: 'none', boxShadow: '0 -16px 40px rgba(0,0,0,0.35)' })}>
+            <View style={sx({ padding: '10px 20px 28px', display: 'flex', flexDirection: 'column' })}>
+              <View style={sx({ width: 36, height: 4, borderRadius: 2, background: 'var(--ink-15)', margin: '2px auto 14px' })} />
+
+              <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 })}>
+                <View style={sx({ fontSize: 12, color: 'var(--ink-4)', letterSpacing: 0.5 })}>词语详情</View>
+                <View onClick={v.closeWordModal} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ width: 30, height: 30, marginRight: -6, borderRadius: '50%', background: 'var(--ink-06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--ink-6)', flexShrink: 0 })}>✕</View>
               </View>
 
-              <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
-                  <View style={sx({ fontSize: 22, fontWeight: 700, color: 'var(--text-heading)' })}>{v.currentDetail.word}</View>
-                  {v.isWordTtsLoading ? (
-                    <View style={sx({ width: 12, height: 12, border: '2px solid var(--ink-15)', borderTopColor: 'var(--accent-light)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
-                  ) : (
-                    <View onClick={v.playWordTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 14, color: v.wordPlayIconColor })}>🔊</View>
-                  )}
+              {/* Header: the word itself is the anchor; favorite sits right
+                  next to it (same tier of action), everything else about
+                  reading/status moves down a row so it reads secondary. */}
+              <View style={sx({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' })}>
+                <View style={sx({ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' })}>
+                  <Text style={sx({ fontSize: 25, fontWeight: 700, color: 'var(--text-heading)' })}>{v.currentDetail.word}</Text>
+                  <Text style={sx({ fontSize: 14, color: 'var(--text-lavender)' })}>{v.currentDetail.kana}</Text>
                 </View>
-                <View style={sx({ display: 'flex', alignItems: 'center', gap: 10 })}>
-                  <View style={sx({ fontSize: 11, color: v.currentMasteryColor, padding: '3px 8px', borderRadius: 10, background: 'var(--ink-05)' })}>{v.currentMasteryLabel}</View>
-                  <View onClick={v.toggleFavorite} style={sx({ fontSize: 20, color: v.favoriteColor })}>{v.favoriteGlyph}</View>
-                </View>
+                <View onClick={v.toggleFavorite} style={sx({ fontSize: 19, color: v.favoriteColor, flexShrink: 0 })}>{v.favoriteGlyph}</View>
               </View>
-              <View>
-                <View style={sx({ fontSize: 14, color: 'var(--text-lavender)' })}>{v.currentDetail.kana}</View>
-                <View style={sx({ fontSize: 12, color: 'var(--ink-4)', fontStyle: 'italic', marginTop: 2 })}>{v.currentDetail.romaji}</View>
+              <View style={sx({ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, marginBottom: 22 })}>
+                <View style={sx({ fontSize: 12, color: 'var(--ink-4)', fontStyle: 'italic' })}>{v.currentDetail.romaji}</View>
+                {v.isWordTtsLoading ? (
+                  <View style={sx({ width: 11, height: 11, border: '2px solid var(--ink-15)', borderTopColor: 'var(--accent-light)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
+                ) : (
+                  <View onClick={v.playWordTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 13, color: v.wordPlayIconColor, padding: 10, margin: -4 })}>🔊</View>
+                )}
+                <View style={sx({ fontSize: 11, color: v.currentMasteryColor, padding: '2px 9px', borderRadius: 10, background: 'var(--ink-05)', marginLeft: 'auto' })}>{v.currentMasteryLabel}</View>
               </View>
 
-              <View>
-                <View style={sx({ fontSize: 11, color: 'var(--ink-35)', marginBottom: 4 })}>词性/词类</View>
-                <View style={sx({ fontSize: 13.5, color: 'var(--text-body)' })}>{v.currentDetail.pos}</View>
-              </View>
-              <View>
-                <View style={sx({ fontSize: 11, color: 'var(--ink-35)', marginBottom: 4 })}>中文释义</View>
-                <View style={sx({ fontSize: 15, fontWeight: 600, color: 'var(--text-heading)' })}>{v.currentDetail.meaning}</View>
-              </View>
-              <View>
-                <View style={sx({ fontSize: 11, color: 'var(--ink-35)', marginBottom: 5 })}>语法解析</View>
-                <View style={sx({ fontSize: 12.5, color: 'var(--text-soft)', lineHeight: 1.6 })}>{v.currentDetail.grammar}</View>
-                {v.currentDetail.formula ? <View style={sx({ marginTop: 8, padding: '10px 12px', background: 'var(--ink-04)', borderRadius: 10, textAlign: 'center', fontSize: 12.5, color: 'var(--accent-light)' })}>{v.currentDetail.formula}</View> : null}
-              </View>
-              <View>
-                <View style={sx({ fontSize: 11, color: 'var(--ink-35)', marginBottom: 6 })}>相关标签</View>
-                <View style={sx({ display: 'flex', gap: 6, flexWrap: 'wrap' })}>
-                  {(v.currentDetail.tags || []).map((tag) => (
-                    <View key={tag} style={sx({ fontSize: 11, padding: '4px 10px', borderRadius: 20, background: 'var(--ink-05)', color: 'var(--ink-6)', border: '1px solid var(--ink-08)' })}>{tag}</View>
+              {/* Meaning group */}
+              {v.currentDetail.pos ? (
+                <View style={sx({ fontSize: 11, color: 'var(--accent-light)', padding: '2px 8px', borderRadius: 8, background: 'rgba(165,168,236,0.14)', width: 'fit-content', marginBottom: 8 })}>{v.currentDetail.pos}</View>
+              ) : null}
+              <View style={sx({ fontSize: 16, fontWeight: 600, color: 'var(--text-heading)', lineHeight: 1.5, marginBottom: 22 })}>{v.currentDetail.meaning}</View>
+
+              {/* Grammar group */}
+              <View style={sx({ fontSize: 11, color: 'var(--ink-4)', letterSpacing: 0.5, marginBottom: 6 })}>语法</View>
+              <View style={sx({ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.65 })}>{v.currentDetail.grammar}</View>
+              {v.currentDetail.formula ? <View style={sx({ marginTop: 10, padding: '10px 12px', background: 'var(--ink-04)', borderRadius: 10, textAlign: 'center', fontSize: 12.5, color: 'var(--accent-light)' })}>{v.currentDetail.formula}</View> : null}
+              {(v.currentDetail.tags || []).length ? (
+                <View style={sx({ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 })}>
+                  {v.currentDetail.tags.map((tag) => (
+                    <View key={tag} style={sx({ fontSize: 10.5, padding: '3px 9px', borderRadius: 20, color: 'var(--ink-5)', border: '1px solid var(--ink-08)' })}>{tag}</View>
                   ))}
                 </View>
+              ) : null}
+
+              <View style={sx({ height: 1, background: 'var(--ink-06)', margin: '22px 0 18px' })} />
+
+              {/* Example group */}
+              <View style={sx({ fontSize: 11, color: 'var(--ink-4)', letterSpacing: 0.5, marginBottom: 8 })}>例句</View>
+              <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
+                <View style={sx({ fontSize: 14, color: 'var(--text-body)' })}>{v.currentDetail.example ? v.currentDetail.example.jp : ''}</View>
+                {v.isExampleTtsLoading ? (
+                  <View style={sx({ width: 11, height: 11, border: '2px solid var(--ink-15)', borderTopColor: 'var(--accent-light)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
+                ) : (
+                  <View onClick={v.playExampleTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 12, color: v.examplePlayIconColor, padding: 10, margin: -4 })}>🔊</View>
+                )}
               </View>
-              <View style={sx({ paddingTop: 6, borderTop: '1px solid var(--ink-06)' })}>
-                <View style={sx({ fontSize: 11, color: 'var(--ink-35)', marginBottom: 6 })}>例句</View>
-                <View style={sx({ display: 'flex', alignItems: 'center', gap: 8 })}>
-                  <View style={sx({ fontSize: 13.5, color: 'var(--text-body)' })}>{v.currentDetail.example ? v.currentDetail.example.jp : ''}</View>
-                  {v.isExampleTtsLoading ? (
-                    <View style={sx({ width: 11, height: 11, border: '2px solid var(--ink-15)', borderTopColor: 'var(--accent-light)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' })} />
-                  ) : (
-                    <View onClick={v.playExampleTts} className="tap" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 12, color: v.examplePlayIconColor })}>🔊</View>
-                  )}
+              <View style={sx({ fontSize: 12, color: 'var(--ink-45)', marginTop: 5 })}>{v.currentDetail.example ? v.currentDetail.example.cn : ''}</View>
+              {v.eggFlash ? (
+                <View className="panel-in" style={sx({ fontSize: 11.5, color: 'var(--accent-light)', marginTop: 8 })}>{v.eggFlash}</View>
+              ) : null}
+              {v.exampleEgg ? (
+                <View style={sx({ marginTop: 8 })}>
+                  <View onClick={v.toggleEgg} className="tap egg-hint" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 11.5, color: 'var(--accent-light)', width: 'fit-content' })}>✦ {v.eggOpen ? '收起彩蛋' : '轻触，好像藏了点什么'}</View>
+                  {v.eggOpen ? (
+                    <View className="panel-in" style={sx({ marginTop: 8, padding: '10px 12px', borderRadius: 12, background: 'rgba(132,137,224,0.12)', border: '1px solid rgba(165,168,236,0.3)' })}>
+                      {v.exampleEgg.jp ? <View style={sx({ fontSize: 13, color: 'var(--accent-light)', marginBottom: 5 })}>{v.exampleEgg.jp}</View> : null}
+                      <View style={sx({ fontSize: 12.5, color: 'var(--text-body)', lineHeight: 1.6 })}>{v.exampleEgg.cn}</View>
+                      {v.exampleEgg.note ? <View style={sx({ fontSize: 11, color: 'var(--ink-4)', marginTop: 8 })}>{v.exampleEgg.note}</View> : null}
+                    </View>
+                  ) : null}
                 </View>
-                <View style={sx({ fontSize: 12, color: 'var(--ink-4)', marginTop: 4 })}>{v.currentDetail.example ? v.currentDetail.example.cn : ''}</View>
-                {v.eggFlash ? (
-                  <View className="panel-in" style={sx({ fontSize: 11.5, color: 'var(--accent-light)', marginTop: 8 })}>{v.eggFlash}</View>
-                ) : null}
-                {v.exampleEgg ? (
-                  <View style={sx({ marginTop: 8 })}>
-                    <View onClick={v.toggleEgg} className="tap egg-hint" hoverClass="press" hoverStartTime={0} hoverStayTime={60} style={sx({ fontSize: 11.5, color: 'var(--accent-light)', width: 'fit-content' })}>✦ {v.eggOpen ? '收起彩蛋' : '轻触，好像藏了点什么'}</View>
-                    {v.eggOpen ? (
-                      <View className="panel-in" style={sx({ marginTop: 8, padding: '10px 12px', borderRadius: 12, background: 'rgba(132,137,224,0.12)', border: '1px solid rgba(165,168,236,0.3)' })}>
-                        {v.exampleEgg.jp ? <View style={sx({ fontSize: 13, color: 'var(--accent-light)', marginBottom: 5 })}>{v.exampleEgg.jp}</View> : null}
-                        <View style={sx({ fontSize: 12.5, color: 'var(--text-body)', lineHeight: 1.6 })}>{v.exampleEgg.cn}</View>
-                        {v.exampleEgg.note ? <View style={sx({ fontSize: 11, color: 'var(--ink-4)', marginTop: 8 })}>{v.exampleEgg.note}</View> : null}
-                      </View>
-                    ) : null}
-                  </View>
-                ) : null}
-              </View>
+              ) : null}
             </View>
           </ScrollView>
         </View>

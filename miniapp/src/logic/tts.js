@@ -139,7 +139,7 @@ export async function ensureTtsAsset(data) {
   }
   const r = res && res.result
   if (!r || !r.ok) {
-    const err = new Error((r && (r.error || r.message)) || '语音生成失败，请稍后再试')
+    const err = new Error((r && (r.error || r.message)) || '朗读加载失败，请稍后再试')
     err.code = r && r.code
     err.quotaInfo = r && r.remainingGenerateCount != null ? {
       remaining: r.remainingGenerateCount,

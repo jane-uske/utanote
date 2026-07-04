@@ -1,5 +1,5 @@
 // WeChat Cloud Function: initTtsCollections
-// 一次性 bootstrap：幂等创建 TTS 所需的数据库集合。
+// 一次性 bootstrap：幂等创建 TTS / AI 讲解所需的数据库集合。
 // 已存在的集合会被跳过（视为成功），可安全重复运行。
 
 const cloud = require('wx-server-sdk')
@@ -14,6 +14,10 @@ const COLLECTIONS = [
   'song_tts_assets',
   'tts_usage_daily',
   'tts_usage_global_daily',
+  // askLine（AI 唱法讲解）：全局答案缓存 + 每日额度
+  'ai_answers',
+  'ai_usage_daily',
+  'ai_usage_global_daily',
 ]
 
 function looksLikeAlreadyExists(e) {

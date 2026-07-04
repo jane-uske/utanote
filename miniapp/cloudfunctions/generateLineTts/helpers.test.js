@@ -10,6 +10,7 @@ const {
   buildCacheKey,
   buildAssetKey,
   cloudPathSegment,
+  contentSafetyDecision,
   userCounterForSource,
 } = require('./helpers')
 
@@ -51,5 +52,9 @@ assert.strictEqual(userCounterForSource('user_uploaded_song'), 'generatedAssetCo
 assert.strictEqual(userCounterForSource('user_custom_text'), 'customTextGenerateCount')
 assert.strictEqual(userCounterForSource('platform_card'), null)
 assert.strictEqual(cloudPathSegment('song/../x', 'fallback'), 'song_.._x')
+assert.deepStrictEqual(contentSafetyDecision({ errCode: 0, result: { suggest: 'pass', label: 100 } }), { ok: true })
+assert.strictEqual(contentSafetyDecision({ errCode: 0, result: { suggest: 'review', label: 20003 } }).code, 'CONTENT_RISK')
+assert.strictEqual(contentSafetyDecision({ errcode: 87014 }).code, 'CONTENT_RISK')
+assert.strictEqual(contentSafetyDecision({ errCode: 40001 }).code, 'CONTENT_SAFETY_UNAVAILABLE')
 
 console.log('generateLineTts helpers ok')

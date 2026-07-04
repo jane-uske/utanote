@@ -37,6 +37,7 @@ const VOICE_SPEAKER_MAP = {
   [DEFAULT_VOICE]: DEFAULT_SPEAKER,
 }
 const JP_ORTHOGRAPHY_REPLACEMENTS = { '风': '風' }
+const CONTENT_SAFETY_CHUNK_SIZE = 2000
 
 function normalizeText(text) {
   const normalized = String(text || '').trim().replace(/\s+/g, ' ')
@@ -145,6 +146,32 @@ function userLimitCodeForSource(source) {
   return 'DAILY_TTS_LIMIT_EXCEEDED'
 }
 
+function splitContentForSafety(text, maxChars = CONTENT_SAFETY_CHUNK_SIZE) {
+  const source = String(text || '').trim()
+  if (!source) return []
+  const out = []
+  for (let i = 0; i < source.length; i += maxChars) {
+    out.push(source.slice(i, i + maxChars))
+  }
+  return out
+}
+
+function contentSafetyDecision(resp) {
+  const rawCode = resp && (resp.errCode != null ? resp.errCode : resp.errcode)
+  const errCode = Number(rawCode == null ? 0 : rawCode)
+  if (errCode === 87014) return { ok: false, code: 'CONTENT_RISK' }
+  if (errCode !== 0) return { ok: false, code: 'CONTENT_SAFETY_UNAVAILABLE' }
+
+  const result = (resp && resp.result) || {}
+  const suggest = String(result.suggest || result.Suggest || '').toLowerCase()
+  const label = result.label == null ? null : Number(result.label)
+  if (suggest === 'pass' || label === 100) return { ok: true }
+  if (suggest === 'risky' || suggest === 'review' || (label != null && label !== 100)) {
+    return { ok: false, code: 'CONTENT_RISK' }
+  }
+  return { ok: true }
+}
+
 module.exports = {
   MAX_TEXT_CHARS,
   DAILY_GENERATE_LIMIT,
@@ -179,4 +206,6 @@ module.exports = {
   userLimitForSource,
   userCounterForSource,
   userLimitCodeForSource,
+  splitContentForSafety,
+  contentSafetyDecision,
 }

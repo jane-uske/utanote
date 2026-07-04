@@ -18,7 +18,15 @@ const https = require('https')
 const http = require('http')
 const { URL } = require('url')
 const cloud = require('wx-server-sdk')
-const { extractJSON, chunk, runWithConcurrency, mergeChunkResults, looksJapanese } = require('./helpers')
+const {
+  extractJSON,
+  chunk,
+  runWithConcurrency,
+  mergeChunkResults,
+  looksJapanese,
+  splitContentForSafety,
+  contentSafetyDecision,
+} = require('./helpers')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -31,6 +39,7 @@ const MAX_LINE_CHARS = 240   // chars per line (excess is cut)
 const CHUNK_SIZE = 8         // lines per LLM batch
 const MAX_CONCURRENCY = 4    // concurrent LLM batch requests
 const HTTP_TIMEOUT = 60000   // ms
+const CONTENT_SECURITY_SCENE = Number(process.env.WX_CONTENT_SECURITY_SCENE || 2)
 
 const DEFAULT_BASE = 'https://api.deepseek.com'
 const DEFAULT_MODEL = 'deepseek-chat'
@@ -137,7 +146,7 @@ function buildSentence(line, i, enrich) {
     kana: String(d.kana || (hl ? hl.reading : '')),
     romaji: String(d.romaji || readingToRomaji(hl ? hl.reading : '')),
     pos: String(d.pos || ''),
-    meaning: String(d.meaning || '（配置 AI 解析后自动生成）'),
+    meaning: String(d.meaning || '（暂缺释义，可重新导入补全）'),
     grammar: String(d.grammar || ''),
     formula: String(d.formula || ''),
     tags: Array.isArray(d.tags) ? d.tags.map(String).slice(0, 6) : [],
@@ -156,7 +165,7 @@ function buildSentence(line, i, enrich) {
     highlightWord,
     furigana: furiganaOf(tokens),
     romaji: romajiOf(tokens),
-    translation: String((enrich && enrich.translation) || '（配置 AI 解析后自动生成中文）'),
+    translation: String((enrich && enrich.translation) || '（暂缺翻译，可重新导入补全）'),
     structure: String((enrich && enrich.structure) || ''),
     tokens,
     tips,
@@ -270,6 +279,43 @@ async function callLLMChunked({ baseURL, apiKey, model, lines }) {
   return mergeChunkResults(results, chunks)
 }
 
+async function checkTextContentSafety({ openid, content }) {
+  if (!openid) {
+    return { ok: false, code: 'CONTENT_SAFETY_UNAVAILABLE', error: '无法完成内容安全检查，请稍后再试。' }
+  }
+  const chunks = splitContentForSafety(content)
+  if (!chunks.length) return { ok: true }
+  if (!cloud.openapi || !cloud.openapi.security || typeof cloud.openapi.security.msgSecCheck !== 'function') {
+    return { ok: false, code: 'CONTENT_SAFETY_UNAVAILABLE', error: '内容安全检查暂不可用，请稍后再试。' }
+  }
+
+  for (const part of chunks) {
+    let resp
+    try {
+      resp = await cloud.openapi.security.msgSecCheck({
+        version: 2,
+        openid,
+        scene: CONTENT_SECURITY_SCENE,
+        content: part,
+      })
+    } catch (e) {
+      console.warn('content safety check failed:', e)
+      return { ok: false, code: 'CONTENT_SAFETY_UNAVAILABLE', error: '内容安全检查暂不可用，请稍后再试。' }
+    }
+    const decision = contentSafetyDecision(resp)
+    if (!decision.ok) {
+      return {
+        ok: false,
+        code: decision.code,
+        error: decision.code === 'CONTENT_RISK'
+          ? '歌词内容暂不支持处理，请修改后重试。'
+          : '内容安全检查暂不可用，请稍后再试。',
+      }
+    }
+  }
+  return { ok: true }
+}
+
 // Cloud function entry.
 // event: { lyrics: string, apiKey?, baseURL?, model? }
 // The key normally comes from process.env.DEEPSEEK_KEY; event.apiKey is a
@@ -305,6 +351,9 @@ exports.main = async (event = {}) => {
     return { ok: false, error: '仅支持日语歌词，请确认粘贴的是日文歌词后重试。' }
   }
 
+  const safety = await checkTextContentSafety({ openid: OPENID, content: rawLyrics })
+  if (!safety.ok) return safety
+
   const apiKey = (process.env.DEEPSEEK_KEY || '').trim()
   const baseURL = (process.env.DEEPSEEK_BASE || DEFAULT_BASE).trim()
   const model = (process.env.DEEPSEEK_MODEL || DEFAULT_MODEL).trim()
@@ -329,7 +378,7 @@ exports.main = async (event = {}) => {
   tokenUsage = usage
   const allNull = enriched.every((e) => e == null)
   source = allNull ? 'local' : warnings.length ? 'partial' : 'llm'
-  warning = warnings.length ? 'AI 部分解析失败，已对失败行降级为本地草稿：' + warnings.join('；') : undefined
+  warning = warnings.length ? '部分句子未能完整整理，已提供基础版内容：' + warnings.join('；') : undefined
 
   const sentences = lines.map((l, i) => buildSentence(l, i, enriched[i]))
 

@@ -12,6 +12,11 @@
 小程序端(Taro) ──wx.cloud.callFunction('generateLineTts')──▶ 云函数(Node,自由联网) ──▶ VOICEVOX TTS
                                                                ├─ 云端缓存 tts_cache
                                                                └─ 每日用量 tts_usage_daily
+
+小程序端(Taro) ──wx.cloud.callFunction('askLine')──────────▶ 云函数(Node,自由联网) ──▶ DeepSeek
+                                                               ├─ 逐句唱法讲解(固定问题,非自由问答)
+                                                               ├─ 内容寻址全局缓存 ai_answers(命中免额度)
+                                                               └─ 每日用量 ai_usage_daily
 ```
 
 ## 目录
@@ -25,12 +30,16 @@ miniapp/
       useUtaNote.js                        逻辑层(从 Web 版照搬)
       parse.js                             调 parse 云函数
       tts.js                               TTS 缓存 + 语音生成
+      ai.js                                调 askLine 云函数(唱法讲解 + 本地答案缓存)
+      copy.js                              集中文案 + REVIEW_SAFE_MODE 审核友好开关
       settings.js / library.js             wx.setStorageSync 持久化
       sx.js                                内联样式对象 → CSS 字符串(自动补 px)
     pages/index/index.jsx                  整个 UI(单页,状态驱动切屏)
   cloudfunctions/
     parse/                                 解析云函数(分词 + DeepSeek)
     generateLineTts/                       TTS 语音生成云函数(VOICEVOX 桥接)
+    askLine/                               逐句唱法讲解云函数(DeepSeek + 全局缓存 + 额度)
+    initTtsCollections/                    幂等建齐所有数据库集合(bootstrap,跑一次)
     login/                                 微信静默登录云函数
   config/ babel.config.js project.config.json package.json
 ```
@@ -57,7 +66,7 @@ npm run build:weapp        # 产物输出到 dist/；开发时用 npm run dev:we
 **3. 开通云开发**
 - 工具顶部点 **「云开发」** → 开通，创建一个环境，记下**环境 ID**
 - 多环境时在 `src/app.js` 的 `Taro.cloud.init({ env: '你的环境ID' })` 填上；单环境可不填
-- 创建数据库集合：`users`、`parse_logs`、`tts_cache`、`song_tts_assets`、`tts_usage_daily`、`tts_usage_global_daily`（权限按需选「仅创建者可读写」或云函数可写）
+- 创建数据库集合：部署并运行一次 `initTtsCollections` 云函数即可幂等建齐全部集合（`users`、`parse_logs`、`tts_cache`、`song_tts_assets`、`tts_usage_daily`、`tts_usage_global_daily`、`ai_answers`、`ai_usage_daily`、`ai_usage_global_daily`）；也可在控制台手动创建
 
 **4. 部署云函数**
 
@@ -66,6 +75,24 @@ npm run build:weapp        # 产物输出到 dist/；开发时用 npm run dev:we
 - `cloudfunctions/login`
 - `cloudfunctions/parse`
 - `cloudfunctions/generateLineTts`
+- `cloudfunctions/askLine`
+- `cloudfunctions/initTtsCollections`（部署后手动运行一次建集合）
+
+> **云调用权限**：`parse` / `generateLineTts` / `askLine` 的 `config.json` 声明了
+> `permissions.openapi: ["security.msgSecCheck"]`（内容安全检查）。该权限只在
+> **通过微信开发者工具（含其 CLI）部署时**同步到微信后台——用 tcb CLI 部署代码
+> 不会同步，函数会报 `-604101 no permission`。
+>
+> **命令行部署**（不想在工具里手动右键时）：
+> ```bash
+> # 代码 + 云调用权限（用 --appid + --paths；--project 推导 appid 会报 41002）
+> /Applications/wechatwebdevtools.app/Contents/MacOS/cli cloud functions deploy \
+>   --env <环境ID> --appid <AppID> --paths cloudfunctions/askLine --remote-npm-install
+> # 环境变量 / 超时（写临时 cloudbaserc.json，用完即删，Key 不进仓库）
+> tcb fn deploy askLine -e <环境ID> --config-file <临时cloudbaserc.json> --force
+> ```
+> 注意：工具 CLI **新建**函数时不会应用 `config.json` 的超时，线上默认 3 秒——
+> 部署后用 `tcb fn detail <名> -e <环境ID>` 核对 timeout / 环境变量。
 
 **5. 配置环境变量**
 
@@ -78,8 +105,10 @@ npm run build:weapp        # 产物输出到 dist/；开发时用 npm run dev:we
 | `parse` | `DEEPSEEK_MODEL`（可选） | 默认为 `deepseek-chat` |
 | `generateLineTts` | `UTANOTE_TTS_ENDPOINT` | TTS 服务 HTTPS 地址 |
 | `generateLineTts` | `UTANOTE_TTS_TOKEN` | TTS 服务鉴权 Token |
+| `askLine` | `DEEPSEEK_KEY` | 同 parse（环境变量按函数隔离，需各配一份） |
+| `askLine` | `DAILY_USER_AI_ASK_LIMIT`（可选） | 每人每日讲解生成上限，默认 30（缓存命中不计） |
 
-`parse` 超时设置为 **60 秒**，`generateLineTts` 设置为 **30 秒**。
+`parse` 与 `askLine` 超时设置为 **60 秒**，`generateLineTts` 设置为 **30 秒**。
 
 **6. 部署 TTS 服务（可选）**
 
@@ -93,7 +122,9 @@ npm run build:weapp        # 产物输出到 dist/；开发时用 npm run dev:we
 ## 说明与限制
 
 - **解析限流**：每个用户（openid）每天最多解析 **5 首**；单次最多 **5000 字、前 40 行**，单行超 240 字裁剪（前端与云函数双重校验）。
-- **TTS 不限制生成次数**，且同句同参数只生成一次走云端缓存，重复播放直接读缓存不消耗生成。
+- **TTS 额度**：同句同参数只合成一次，走云端缓存 `tts_cache`；**播放与缓存命中不消耗额度**，只有真实合成计数（用户上传歌曲默认 300 次/天、自定义文本 100 次/天、全局 3000 次/天，环境变量可调）。
+- **唱法讲解（askLine）**：固定问题、无自由问答；答案按（提示词版本+模型+问题+句子+读音）内容寻址，全局缓存 `ai_answers`——同一句全网只花一次生成，缓存命中不消耗额度；失败不计数；输入与输出各过一次 `msgSecCheck`。
+- **审核友好模式**：`src/logic/copy.js` 的 `REVIEW_SAFE_MODE = true` 时，界面文案不出现 AI/AIGC/DeepSeek/VOICEVOX/TTS/生成/合成/Beta 等表述，产品统一表述为「日语歌词学习工具」；改为 `false` 恢复正式版文案。所有带技术表述的用户可见文案集中在该文件维护。
 - **LLM 分批**：云函数以 `CHUNK_SIZE=8` 行/批、最大并发 `MAX_CONCURRENCY=4` 分批请求 DeepSeek，批次失败或返回数量异常时自动降级/对齐，不影响其余行。
 - **布局用固定 px**（和 Web 设计一致），不是 rpx——换机型时尺寸不随宽度缩放。要做全机型自适应，可把 `sx.js` 的数字改成输出 rpx。
 - **状态栏**：用了自定义导航（`navigationStyle: custom`），内容顶部留了 44px 安全区，可按需接 `getWindowInfo` 精确适配刘海。

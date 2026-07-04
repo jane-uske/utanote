@@ -2,5 +2,10 @@
   "timing": {
     "timeout": 20
   },
-  "memory": 256
+  "memory": 256,
+  "permissions": {
+    "openapi": [
+      "security.msgSecCheck"
+    ]
+  }
 }

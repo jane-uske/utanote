@@ -11,7 +11,9 @@ const UNITLESS = new Set([
 
 // ── Global font scale ───────────────────────────────────────────
 const FONT_SCALE_KEY = 'utanote.fontScale'
-let _fontScale = 1
+// Default font scale = the "标准" tier (1.3). The whole app is sized bigger by
+// default per design; a user's saved 字号设置 preference still wins over this.
+let _fontScale = 1.3
 
 export function initFontScale() {
   try {

@@ -15,28 +15,33 @@ page {
   --bg-bar: rgba(13,17,32,0.95);
   --surface-sheet: #161a2c;
 
-  /* white-alpha family: surfaces/borders/muted text, same alpha both themes */
-  --ink-03: rgba(255,255,255,0.03);
-  --ink-04: rgba(255,255,255,0.04);
-  --ink-05: rgba(255,255,255,0.05);
-  --ink-06: rgba(255,255,255,0.06);
-  --ink-07: rgba(255,255,255,0.07);
-  --ink-08: rgba(255,255,255,0.08);
-  --ink-1:  rgba(255,255,255,0.1);
-  --ink-2:  rgba(255,255,255,0.2);
-  --ink-15: rgba(255,255,255,0.15);
-  --ink-18: rgba(255,255,255,0.18);
-  --ink-25: rgba(255,255,255,0.25);
-  --ink-3:  rgba(255,255,255,0.3);
-  --ink-35: rgba(255,255,255,0.35);
-  --ink-4:  rgba(255,255,255,0.4);
-  --ink-45: rgba(255,255,255,0.45);
-  --ink-5:  rgba(255,255,255,0.5);
-  --ink-55: rgba(255,255,255,0.55);
-  --ink-6:  rgba(255,255,255,0.6);
-  --ink-65: rgba(255,255,255,0.65);
-  --ink-7:  rgba(255,255,255,0.7);
-  --ink-85: rgba(255,255,255,0.85);
+  /* warm-ink family: surfaces/borders/text share one warm off-white base
+     (230,225,246 — a hint of lavender, not clinical pure white). Alpha stays
+     the same as before for surfaces/borders (03–3); the secondary/caption
+     text tiers (35–5) get a readability bump since 0.35–0.45 alpha read as
+     near-invisible on the near-black page background. Top tiers (55–85)
+     only nudge slightly — they were already legible. */
+  --ink-03: rgba(230,225,246,0.03);
+  --ink-04: rgba(230,225,246,0.04);
+  --ink-05: rgba(230,225,246,0.05);
+  --ink-06: rgba(230,225,246,0.06);
+  --ink-07: rgba(230,225,246,0.07);
+  --ink-08: rgba(230,225,246,0.08);
+  --ink-1:  rgba(230,225,246,0.1);
+  --ink-2:  rgba(230,225,246,0.2);
+  --ink-15: rgba(230,225,246,0.15);
+  --ink-18: rgba(230,225,246,0.18);
+  --ink-25: rgba(230,225,246,0.25);
+  --ink-3:  rgba(230,225,246,0.3);
+  --ink-35: rgba(230,225,246,0.48);
+  --ink-4:  rgba(230,225,246,0.54);
+  --ink-45: rgba(230,225,246,0.58);
+  --ink-5:  rgba(230,225,246,0.6);
+  --ink-55: rgba(230,225,246,0.64);
+  --ink-6:  rgba(230,225,246,0.68);
+  --ink-65: rgba(230,225,246,0.72);
+  --ink-7:  rgba(230,225,246,0.76);
+  --ink-85: rgba(230,225,246,0.85);
 
   --text-root: #f2f2f6;
   --text-heading: #f5f4fa;
@@ -63,27 +68,27 @@ page {
   --bg-bar: rgba(244,244,248,0.95);
   --surface-sheet: #ffffff;
 
-  --ink-03: rgba(20,22,35,0.03);
-  --ink-04: rgba(20,22,35,0.04);
-  --ink-05: rgba(20,22,35,0.05);
-  --ink-06: rgba(20,22,35,0.06);
-  --ink-07: rgba(20,22,35,0.07);
-  --ink-08: rgba(20,22,35,0.08);
-  --ink-1:  rgba(20,22,35,0.1);
-  --ink-2:  rgba(20,22,35,0.2);
-  --ink-15: rgba(20,22,35,0.15);
-  --ink-18: rgba(20,22,35,0.18);
-  --ink-25: rgba(20,22,35,0.25);
-  --ink-3:  rgba(20,22,35,0.3);
-  --ink-35: rgba(20,22,35,0.35);
-  --ink-4:  rgba(20,22,35,0.4);
-  --ink-45: rgba(20,22,35,0.45);
-  --ink-5:  rgba(20,22,35,0.5);
-  --ink-55: rgba(20,22,35,0.55);
-  --ink-6:  rgba(20,22,35,0.6);
-  --ink-65: rgba(20,22,35,0.65);
-  --ink-7:  rgba(20,22,35,0.7);
-  --ink-85: rgba(20,22,35,0.85);
+  --ink-03: rgba(38,32,56,0.03);
+  --ink-04: rgba(38,32,56,0.04);
+  --ink-05: rgba(38,32,56,0.05);
+  --ink-06: rgba(38,32,56,0.06);
+  --ink-07: rgba(38,32,56,0.07);
+  --ink-08: rgba(38,32,56,0.08);
+  --ink-1:  rgba(38,32,56,0.1);
+  --ink-2:  rgba(38,32,56,0.2);
+  --ink-15: rgba(38,32,56,0.15);
+  --ink-18: rgba(38,32,56,0.18);
+  --ink-25: rgba(38,32,56,0.25);
+  --ink-3:  rgba(38,32,56,0.3);
+  --ink-35: rgba(38,32,56,0.46);
+  --ink-4:  rgba(38,32,56,0.52);
+  --ink-45: rgba(38,32,56,0.56);
+  --ink-5:  rgba(38,32,56,0.58);
+  --ink-55: rgba(38,32,56,0.62);
+  --ink-6:  rgba(38,32,56,0.66);
+  --ink-65: rgba(38,32,56,0.7);
+  --ink-7:  rgba(38,32,56,0.74);
+  --ink-85: rgba(38,32,56,0.85);
 
   --text-root: #15151f;
   --text-heading: #101018;

@@ -102,4 +102,39 @@ function looksJapanese(text) {
   return kana / chars.length >= JA_KANA_MIN_RATIO
 }
 
-module.exports = { extractJSON, chunk, runWithConcurrency, mergeChunkResults, looksJapanese }
+const CONTENT_SAFETY_CHUNK_SIZE = 2000
+function splitContentForSafety(text, maxChars = CONTENT_SAFETY_CHUNK_SIZE) {
+  const source = String(text || '').trim()
+  if (!source) return []
+  const out = []
+  for (let i = 0; i < source.length; i += maxChars) {
+    out.push(source.slice(i, i + maxChars))
+  }
+  return out
+}
+
+function contentSafetyDecision(resp) {
+  const rawCode = resp && (resp.errCode != null ? resp.errCode : resp.errcode)
+  const errCode = Number(rawCode == null ? 0 : rawCode)
+  if (errCode === 87014) return { ok: false, code: 'CONTENT_RISK' }
+  if (errCode !== 0) return { ok: false, code: 'CONTENT_SAFETY_UNAVAILABLE' }
+
+  const result = (resp && resp.result) || {}
+  const suggest = String(result.suggest || result.Suggest || '').toLowerCase()
+  const label = result.label == null ? null : Number(result.label)
+  if (suggest === 'pass' || label === 100) return { ok: true }
+  if (suggest === 'risky' || suggest === 'review' || (label != null && label !== 100)) {
+    return { ok: false, code: 'CONTENT_RISK' }
+  }
+  return { ok: true }
+}
+
+module.exports = {
+  extractJSON,
+  chunk,
+  runWithConcurrency,
+  mergeChunkResults,
+  looksJapanese,
+  splitContentForSafety,
+  contentSafetyDecision,
+}
