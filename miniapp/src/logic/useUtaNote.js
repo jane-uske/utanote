@@ -350,8 +350,12 @@ export function useUtaNote() {
     // land on a wrong-but-plausible one (e.g. reading 夜 alone as よる), while
     // kana is unambiguous. Furigana is space-separated per word for display,
     // so collapse it into one continuous reading before sending it off.
+    // A kana track containing kanji means some token lost its reading and the
+    // furigana fell back to raw text — sending that would read those words
+    // twice (reading + kanji). Discard it and let the engine read the原文.
     const kanaReading = kana ? String(kana).replace(/\s+/g, '') : ''
-    const ttsText = normalizeTtsText(audioText || kanaReading || text)
+    const kanaUsable = kanaReading && !/[㐀-鿿豈-﫿]/.test(kanaReading)
+    const ttsText = normalizeTtsText(audioText || (kanaUsable ? kanaReading : '') || text)
     if (!ttsText) return
     if (ttsText.length > 120) {
       Taro.showToast({ title: '这句歌词太长了，暂不支持朗读', icon: 'none' })

@@ -4,6 +4,7 @@ const {
   chunk,
   runWithConcurrency,
   mergeChunkResults,
+  buildTokenTrack,
   looksJapanese,
   splitContentForSafety,
   contentSafetyDecision,
@@ -54,6 +55,74 @@ assert.deepStrictEqual(contentSafetyDecision({ errCode: 0, result: { suggest: 'p
 assert.strictEqual(contentSafetyDecision({ errCode: 0, result: { suggest: 'risky', label: 20001 } }).code, 'CONTENT_RISK')
 assert.strictEqual(contentSafetyDecision({ errcode: 87014 }).code, 'CONTENT_RISK')
 assert.strictEqual(contentSafetyDecision({ errCode: -1 }).code, 'CONTENT_SAFETY_UNAVAILABLE')
+
+// ── buildTokenTrack: LLM boundaries win only when they reconstruct the line ──
+const isParticle = (t) => new Set(['が', 'を', 'に', 'は', 'で', 'な', 'と']).has(t)
+
+// REGRESSION（口触り事故）: 本地切 薄|く|透明|な|口触り|で，LLM 切 薄く|透明|な|口触り|で。
+// 旧逻辑按下标贴数据 → く 拿到 とうめい、な 拿到 くちざわり，整句读音/角色左移一位。
+// 新逻辑：LLM tokens 能拼回原句 → 直接采用 LLM 边界，读音落在正确的词上。
+{
+  const line = '薄く透明な口触りで'
+  const localTokens = [
+    { text: '薄', reading: '', type: 'content' },
+    { text: 'く', reading: 'く', type: 'content' },
+    { text: '透明', reading: '', type: 'content' },
+    { text: 'な', reading: '', type: 'particle' },
+    { text: '口触り', reading: '', type: 'content' },
+    { text: 'で', reading: '', type: 'particle' },
+  ]
+  const enrichTokens = [
+    { text: '薄く', reading: 'うすく', role: '状语：薄薄地' },
+    { text: '透明', reading: 'とうめい', role: '形容动词词干' },
+    { text: 'な', reading: '', role: '连体形词尾' },
+    { text: '口触り', reading: 'くちざわり', role: '宾语：口感' },
+    { text: 'で', reading: '', role: '助词' },
+  ]
+  const tokens = buildTokenTrack({ line, localTokens, enrichTokens, isParticle })
+  assert.deepStrictEqual(tokens.map((t) => t.text), ['薄く', '透明', 'な', '口触り', 'で'])
+  assert.strictEqual(tokens[0].reading, 'うすく')
+  assert.strictEqual(tokens[1].reading, 'とうめい', '透明 的读音必须落在 透明 上，不能漂到 く')
+  assert.strictEqual(tokens[3].reading, 'くちざわり', '口触り 的读音必须落在 口触り 上，不能漂到 な')
+  assert.strictEqual(tokens[2].type, 'particle')
+  assert.strictEqual(tokens[2].reading, '', '助词不带读音')
+  assert.strictEqual(tokens[4].type, 'particle')
+
+  // LLM tokens 拼不回原句（丢了 で）→ 整句退回本地切分，且不贴任何 LLM 数据
+  const broken = enrichTokens.slice(0, 4)
+  const fallback = buildTokenTrack({ line, localTokens, enrichTokens: broken, isParticle })
+  assert.deepStrictEqual(fallback.map((t) => t.text), ['薄', 'く', '透明', 'な', '口触り', 'で'])
+  assert.ok(fallback.every((t) => t.reading !== 'とうめい' && t.reading !== 'くちざわり'), '降级后不得残留任何 LLM 读音（宁缺勿错）')
+  assert.strictEqual(fallback[3].role, '助词')
+  assert.strictEqual(fallback[0].role, '', '降级后内容词不带 LLM 角色')
+}
+
+// 原句含空格、LLM 输出不含 → 忽略空白差异后仍算重建成功
+{
+  const line = '夜風が静かに 窓をたたく'
+  const localTokens = [{ text: '夜風', reading: '', type: 'content' }]
+  const enrichTokens = [
+    { text: '夜風', reading: 'よかぜ', role: '主语' },
+    { text: 'が', reading: '', role: '主格助词' },
+    { text: '静かに', reading: 'しずかに', role: '状语' },
+    { text: '窓', reading: 'まど', role: '宾语' },
+    { text: 'を', reading: '', role: '宾格助词' },
+    { text: 'たたく', reading: 'たたく', role: '谓语' },
+  ]
+  const tokens = buildTokenTrack({ line, localTokens, enrichTokens, isParticle })
+  assert.strictEqual(tokens.length, 6)
+  assert.strictEqual(tokens[0].reading, 'よかぜ')
+}
+
+// LLM tokens 为空/缺失/含空 text/多出内容 → 全部退回本地
+{
+  const line = 'ありがとう'
+  const localTokens = [{ text: 'ありがとう', reading: 'ありがとう', type: 'content' }]
+  for (const bad of [null, [], [{ text: '' }], [{ text: 'ありがとう' }, { text: '！' }], [{ reading: 'x' }]]) {
+    const tokens = buildTokenTrack({ line, localTokens, enrichTokens: bad, isParticle })
+    assert.deepStrictEqual(tokens.map((t) => t.text), ['ありがとう'], `enrichTokens=${JSON.stringify(bad)} 必须降级`)
+  }
+}
 
 async function main() {
   // ── runWithConcurrency: order preserved, values correct ────────

@@ -102,6 +102,45 @@ function looksJapanese(text) {
   return kana / chars.length >= JA_KANA_MIN_RATIO
 }
 
+// Pick the token track for one line. The local segmenter (Intl.Segmenter)
+// and the LLM tokenize independently and DISAGREE on word boundaries
+// (e.g. local 薄|く vs LLM 薄く) — pasting LLM data onto local tokens by
+// index silently shifts every reading/role one slot over (the 口触り bug).
+// So: the LLM track is used only when its token texts exactly reconstruct
+// the line (whitespace ignored); otherwise fall back to the pure local
+// track WITHOUT any LLM data — a missing reading beats a wrong one.
+//
+// localTokens: [{text, reading, type}] from the local segmenter.
+// enrichTokens: [{text, reading, role}] from the LLM (untrusted).
+// isParticle: (text) => bool — kept as a parameter so this stays pure.
+function buildTokenTrack({ line, localTokens, enrichTokens, isParticle }) {
+  const clean = (s) => String(s == null ? '' : s).replace(/\s+/g, '')
+  const llm = Array.isArray(enrichTokens) ? enrichTokens : []
+  const reconstructs = llm.length > 0
+    && llm.every((t) => t && typeof t.text === 'string' && t.text.trim())
+    && clean(llm.map((t) => t.text).join('')) === clean(line)
+
+  if (reconstructs) {
+    return llm.map((t) => {
+      const text = String(t.text).trim()
+      const particle = isParticle(text)
+      return {
+        text,
+        reading: particle ? '' : String(t.reading || ''),
+        role: String(t.role || (particle ? '助词' : '')),
+        type: particle ? 'particle' : 'content',
+      }
+    })
+  }
+
+  return (Array.isArray(localTokens) ? localTokens : []).map((t) => ({
+    text: String(t.text || ''),
+    reading: t.type === 'particle' ? '' : String(t.reading || ''),
+    role: t.type === 'particle' ? '助词' : '',
+    type: t.type === 'particle' ? 'particle' : 'content',
+  }))
+}
+
 const CONTENT_SAFETY_CHUNK_SIZE = 2000
 function splitContentForSafety(text, maxChars = CONTENT_SAFETY_CHUNK_SIZE) {
   const source = String(text || '').trim()
@@ -134,6 +173,7 @@ module.exports = {
   chunk,
   runWithConcurrency,
   mergeChunkResults,
+  buildTokenTrack,
   looksJapanese,
   splitContentForSafety,
   contentSafetyDecision,

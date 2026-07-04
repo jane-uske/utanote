@@ -23,6 +23,7 @@ const {
   chunk,
   runWithConcurrency,
   mergeChunkResults,
+  buildTokenTrack,
   looksJapanese,
   splitContentForSafety,
   contentSafetyDecision,
@@ -119,18 +120,18 @@ function buildSentence(line, i, enrich) {
   const localTokens = tokenizeLocal(line)
   const enrichTokens = enrich && Array.isArray(enrich.tokens) ? enrich.tokens : []
 
-  const tokens = localTokens.map((local, idx) => {
-    const t = enrichTokens[idx] || {}
-    const text = String(local.text || '')
-    const type = tokenType(text)
-    const reading = (t.reading && String(t.reading)) || localReading(text)
-    return {
-      text,
-      reading: type === 'particle' ? '' : reading,
-      role: (t.role && String(t.role)) || (type === 'particle' ? '助词' : ''),
-      type,
-    }
-  })
+  // LLM boundaries win only when they exactly reconstruct the line; otherwise
+  // pure local track with no LLM data (see helpers.buildTokenTrack). Content
+  // tokens that end up without a reading get the local kana fallback — safe,
+  // because it's derived from the token's own text, not from a position.
+  const tokens = buildTokenTrack({
+    line,
+    localTokens,
+    enrichTokens,
+    isParticle: (text) => PARTICLES.has(text),
+  }).map((t) => (
+    t.type === 'content' && !t.reading ? { ...t, reading: localReading(t.text) } : t
+  ))
 
   const firstContent = tokens.find((t) => t.type === 'content')
   const enrichHighlight = enrich && enrich.highlightWord && String(enrich.highlightWord)
