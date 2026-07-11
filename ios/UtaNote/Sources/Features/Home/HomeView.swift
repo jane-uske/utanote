@@ -133,6 +133,8 @@ struct HomeView: View {
                     .padding(.horizontal, 16)
                     .frame(height: 44)
                 }
+                // UtaCard 不裁剪内容；不透明渐变会把卡片圆角顶穿，须按同样的 16pt 圆角裁掉
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
         .buttonStyle(PressableStyle(scale: 0.985))
