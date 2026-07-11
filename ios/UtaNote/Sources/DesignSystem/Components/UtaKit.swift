@@ -32,25 +32,40 @@ struct PaperBackground: View {
 }
 
 /// 和纸颗粒感，确定性噪点。
+/// 纹理只在首次访问时渲染一张 512×512，之后 GPU 平铺——
+/// 不要每次 body 用 Canvas 现画，页面失效时上千个点的重绘会拖慢滚动。
 struct GrainOverlay: View {
     var opacity: Double = 0.05
 
-    var body: some View {
-        Canvas { context, size in
+    @MainActor
+    private static let texture: Image = {
+        let side: Double = 512
+        let canvas = Canvas { context, size in
             var rng = SeededGenerator(seed: 20260711)
             let count = Int(size.width * size.height / 300)
             for _ in 0..<count {
-                let x = Double.random(in: 0..<max(1, size.width), using: &rng)
-                let y = Double.random(in: 0..<max(1, size.height), using: &rng)
+                let x = Double.random(in: 0..<size.width, using: &rng)
+                let y = Double.random(in: 0..<size.height, using: &rng)
                 let w = Double.random(in: 0.4...1.1, using: &rng)
                 let bright = Double.random(in: 0...1, using: &rng) > 0.5
                 context.fill(
                     Path(CGRect(x: x, y: y, width: w, height: w)),
-                    with: .color((bright ? Color.white : Color.black).opacity(opacity)))
+                    with: .color(bright ? .white : .black))
             }
         }
-        .allowsHitTesting(false)
-        .ignoresSafeArea()
+        .frame(width: side, height: side)
+        let renderer = ImageRenderer(content: canvas)
+        renderer.scale = 2
+        guard let uiImage = renderer.uiImage else { return Image(uiImage: UIImage()) }
+        return Image(uiImage: uiImage)
+    }()
+
+    var body: some View {
+        Self.texture
+            .resizable(resizingMode: .tile)
+            .opacity(opacity)
+            .allowsHitTesting(false)
+            .ignoresSafeArea()
     }
 }
 

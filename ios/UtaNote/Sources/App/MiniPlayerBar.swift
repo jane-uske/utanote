@@ -57,18 +57,25 @@ struct MiniPlayerBar: View {
 }
 
 /// 播放时旋转的小唱片。
+/// 旋转用 repeatForever 动画交给渲染服务器——不要用 TimelineView 逐帧重建视图，
+/// 那会让主线程每 33ms 重新光栅化整个封面（渐变+圆环+明朝体字形），滚动会掉帧。
 struct SpinningCover: View {
     let style: CoverStyle
     let isSpinning: Bool
 
+    @State private var spinning = false
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isSpinning)) { timeline in
-            CoverArtView(style: style, cornerRadius: 19)
-                .frame(width: 38, height: 38)
-                .clipShape(Circle())
-                .rotationEffect(.degrees(
-                    timeline.date.timeIntervalSinceReferenceDate
-                        .truncatingRemainder(dividingBy: 12) / 12 * 360))
-        }
+        CoverArtView(style: style, cornerRadius: 19)
+            .frame(width: 38, height: 38)
+            .clipShape(Circle())
+            .rotationEffect(.degrees(spinning ? 360 : 0))
+            .animation(
+                spinning
+                    ? .linear(duration: 12).repeatForever(autoreverses: false)
+                    : .easeOut(duration: 0.6),
+                value: spinning)
+            .onAppear { spinning = isSpinning }
+            .onChange(of: isSpinning) { _, now in spinning = now }
     }
 }

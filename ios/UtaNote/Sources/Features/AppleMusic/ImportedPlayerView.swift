@@ -8,6 +8,7 @@ struct ImportedPlayerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var studyLine: LyricLine?
     @State private var stampedLineID: String?
+    @State private var showHint = true
 
     var body: some View {
         ZStack {
@@ -29,6 +30,10 @@ struct ImportedPlayerView: View {
         }
         .onChange(of: studyLine) { _, newValue in
             if newValue != nil { app.musicPlayer.pause() }
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(6))
+            withAnimation(.easeOut(duration: 0.8)) { showHint = false }
         }
         .onDisappear {
             if app.presentedImportedSong == nil { app.musicPlayer.stop() }
@@ -64,20 +69,8 @@ struct ImportedPlayerView: View {
     // MARK: - 顶栏
 
     private var header: some View {
-        HStack {
-            Button {
-                app.presentedImportedSong = nil
-                app.musicPlayer.stop()
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.75))
-                    .frame(width: 42, height: 42)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Spacer()
+        // 两侧元素宽度不等（关闭钮 42pt vs 标签 ~90pt），标题必须绝对居中而非靠 Spacer 挤
+        ZStack {
             VStack(spacing: 2) {
                 Text(song.title)
                     .font(.lyric(17, heavy: true))
@@ -89,9 +82,24 @@ struct ImportedPlayerView: View {
                     .kerning(1)
                     .lineLimit(1)
             }
-            Spacer()
-            Chip(text: "Apple Music", color: .white.opacity(0.6))
-                .padding(.trailing, 6)
+            .padding(.horizontal, 104)
+            HStack {
+                Button {
+                    app.presentedImportedSong = nil
+                    app.musicPlayer.stop()
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
+                        .frame(width: 42, height: 42)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                Chip(text: "Apple Music", color: .white.opacity(0.38))
+                    .padding(.trailing, 6)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.top, 6)
@@ -102,6 +110,12 @@ struct ImportedPlayerView: View {
     private var controls: some View {
         let player = app.musicPlayer
         return VStack(spacing: 12) {
+            if showHint {
+                Text("轻点歌词，读懂这一句 · 长按收藏")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .transition(.opacity)
+            }
             if let error = player.lastError {
                 Text(error)
                     .font(.system(size: 11.5))

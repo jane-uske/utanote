@@ -139,6 +139,8 @@ final class AppleMusicPlayerController {
 
     private func refreshPlaybackState() {
         isPlaying = player.playbackState == .playing
+        // prepareToPlay 对 store id 队列常先报错随后照常播——播起来了就清掉误报
+        if isPlaying, lastError != nil { lastError = nil }
     }
 
     private func refreshLineIndex() {

@@ -66,7 +66,10 @@ struct LyricFlowView: View {
     }
 
     private func state(for index: Int) -> LyricLineRow.LineState {
-        guard let current = currentLineIndex else { return .far }
+        guard let current = currentLineIndex else {
+            // 前奏期给第一句"将至"的半亮态，页面不至于一片死灰
+            return index == 0 ? .near : .far
+        }
         if index == current { return .current }
         return abs(index - current) == 1 ? .near : .far
     }
