@@ -33,11 +33,8 @@ struct RootView: View {
             ImportedPlayerView(song: song)
         }
         .fullScreenCover(item: $app.presentedCourseLesson) { lesson in
-            // 深链路径也要注册课程目的地，否则完成页的「查看下一课」推不动
-            NavigationStack {
-                CourseLessonView(lesson: lesson)
-                    .navigationDestination(for: CourseLesson.self) { CourseLessonView(lesson: $0) }
-            }
+            // 课内「查看下一课」是原地换课不推栈，此处无需注册 navigationDestination
+            NavigationStack { CourseLessonView(lesson: lesson) }
         }
         .fullScreenCover(isPresented: showsOnboarding) {
             OnboardingView()

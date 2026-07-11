@@ -38,9 +38,7 @@ struct CourseDashboardView: View {
         }
         .navigationTitle("课程")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: CourseLesson.self) { lesson in
-            CourseLessonView(lesson: lesson)
-        }
+        // 课程一律走闭包式 NavigationLink，不注册 CourseLesson 的 navigationDestination（iOS 27 上 value 式解析不可靠）
         .sheet(isPresented: setupBinding) {
             CourseSetupView()
                 .interactiveDismissDisabled()
@@ -82,7 +80,9 @@ struct CourseDashboardView: View {
                 ProgressView(value: Double(completedIDs.count), total: Double(CourseCatalog.lessons.count))
                     .tint(UtaColor.indigo)
                 if let nextLesson {
-                    NavigationLink(value: nextLesson) {
+                    NavigationLink {
+                        CourseLessonView(lesson: nextLesson)
+                    } label: {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(completedIDs.isEmpty ? "开始第一课" : "继续下一课")
@@ -172,7 +172,9 @@ struct CourseDashboardView: View {
             if locked {
                 lessonLabel(lesson, completed: completed, locked: true)
             } else {
-                NavigationLink(value: lesson) {
+                NavigationLink {
+                    CourseLessonView(lesson: lesson)
+                } label: {
                     lessonLabel(lesson, completed: completed, locked: false)
                 }
                 .buttonStyle(PressableStyle(scale: 0.985))

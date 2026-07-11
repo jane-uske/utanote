@@ -38,6 +38,9 @@ struct HomeView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            // 课程导航一律用闭包式 NavigationLink：iOS 27 上 value 式 push 的
+            // 目的地解析不可靠（重复注册报 “declared earlier on the stack”，
+            // 单一注册则静默失效），不要改回 navigationDestination(for:)
             .navigationDestination(isPresented: $showsCourseRoute) {
                 CourseDashboardView()
             }

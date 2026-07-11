@@ -3,7 +3,12 @@ import SwiftUI
 import UIKit
 
 struct CourseLessonView: View {
-    let lesson: CourseLesson
+    // 「查看下一课」原地换课而不是往导航栈上叠——否则从第二课返回会落回第一课
+    @State private var lesson: CourseLesson
+
+    init(lesson: CourseLesson) {
+        _lesson = State(initialValue: lesson)
+    }
 
     @Environment(AppModel.self) private var app
     @Environment(\.modelContext) private var context
@@ -472,7 +477,9 @@ struct CourseLessonView: View {
             } else {
                 VStack(spacing: 12) {
                     if let next = CourseCatalog.lessons.first(where: { $0.sequence == lesson.sequence + 1 }) {
-                        NavigationLink(value: next) {
+                        Button {
+                            advance(to: next)
+                        } label: {
                             Label("查看下一课", systemImage: "arrow.right")
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(.white)
@@ -556,6 +563,24 @@ struct CourseLessonView: View {
     private var canContinue: Bool {
         if stage == 3 { return quizPassed }
         return stage < stageCount - 1
+    }
+
+    /// 原地切到下一课并重置全部课内状态
+    private func advance(to next: CourseLesson) {
+        app.tts.stop()
+        recording.reset()
+        withAnimation(.easeInOut(duration: 0.25)) {
+            lesson = next
+            stage = 0
+            selectedQuizIndex = nil
+            quizPassed = false
+            feedback = nil
+            isEvaluating = false
+            liveCompleted = false
+            didComplete = false
+            copiedPrompt = false
+        }
+        _ = CourseStore.start(next, in: context)
     }
 
     private func handleRecordTap() async {
