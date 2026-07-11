@@ -1,0 +1,377 @@
+{
+  "id": "hoshi-no-kakera",
+  "order": 3,
+  "title": "星のカケラ",
+  "titleReading": "ほしのかけら",
+  "titleTranslation": "星星的碎片",
+  "artist": "星野ルリ",
+  "level": "N4",
+  "summary": "把散落的回忆拾进口袋，带着约定走向明天。",
+  "storyIntro": "深夜的归途上，她抬头望见满天星光，口袋里还留着和那个人一起捡起的「星星碎片」。那个人已经去了很远的地方，只剩下拉过小指的约定。这一晚，她决定不再只是想念——带着碎片和约定，一个人也要走向明天。",
+  "tags": ["バラード", "夜", "星", "約束"],
+  "coverStyle": { "glyph": "星", "colors": ["#4A3F6E", "#8B84B8"], "accentHex": "#A79FD4" },
+  "music": { "bpm": 80, "sections": [ { "name": "intro", "bars": 4, "chords": ["Am","G","F","G"] }, { "name": "a", "bars": 8, "chords": ["Am","F","C","G","Am","F","Dm","E"] }, { "name": "b", "bars": 8, "chords": ["F","G","Am","Em","F","G","C","E"] }, { "name": "a2", "bars": 8, "chords": ["Am","F","C","G","Am","F","G","Am"] }, { "name": "hook", "bars": 4, "chords": ["F","G","Am","Am"] }, { "name": "outro", "bars": 4, "chords": ["F","G","Am","Am"] } ] },
+  "durationSec": 108.0,
+  "lines": [
+    {
+      "id": "l01",
+      "start": 12.0,
+      "end": 17.0,
+      "text": "夜風が運ぶ　遠い日の声",
+      "tokens": [
+        { "surface": "夜風", "reading": "よかぜ" },
+        { "surface": "が", "reading": null },
+        { "surface": "運ぶ", "reading": "はこぶ" },
+        { "surface": "　", "reading": null },
+        { "surface": "遠い", "reading": "とおい" },
+        { "surface": "日", "reading": "ひ" },
+        { "surface": "の", "reading": null },
+        { "surface": "声", "reading": "こえ" }
+      ],
+      "translation": "夜风捎来了，那遥远日子的声音",
+      "words": [
+        { "surface": "夜風", "reading": "よかぜ", "meaning": "夜风", "level": "N3", "note": "「夜＋風」的复合词，歌词里常用来铺垫安静的夜景。" },
+        { "surface": "運ぶ", "reading": "はこぶ", "meaning": "搬运；送来", "level": "N4", "note": "这里是风「送来」声音的诗意用法，不只是搬东西。" }
+      ],
+      "grammar": [
+        { "pattern": "動詞辞書形＋名詞", "explanation": "动词原形直接放在名词前面修饰它，相当于中文的「……的」。「夜風が運ぶ声」＝夜风送来的声音。", "example": "母が作る料理が好きです。", "exampleTranslation": "我喜欢妈妈做的菜。" }
+      ],
+      "emotion": { "kind": "nostalgic", "intensity": 0.5, "note": "开场只有风声和回忆，远处传来的是已经听不真切的声音。" },
+      "culture": null,
+      "singingTip": "「よかぜ」起音像叹息一样轻，多带一点气声；句尾「こえ」渐弱，营造夜风拂过的感觉。"
+    },
+    {
+      "id": "l02",
+      "start": 18.0,
+      "end": 23.0,
+      "text": "ポケットの中　光るカケラ",
+      "tokens": [
+        { "surface": "ポケット", "reading": null },
+        { "surface": "の", "reading": null },
+        { "surface": "中", "reading": "なか" },
+        { "surface": "　", "reading": null },
+        { "surface": "光る", "reading": "ひかる" },
+        { "surface": "カケラ", "reading": null }
+      ],
+      "translation": "口袋深处，星星的碎片微微发亮",
+      "words": [
+        { "surface": "ポケット", "reading": "ぽけっと", "meaning": "口袋", "level": "N5", "note": "外来语。「ポケットの中」是歌词里藏心事的经典位置。" },
+        { "surface": "光る", "reading": "ひかる", "meaning": "发光、闪烁", "level": "N4", "note": "动词；对应的名词是「光（ひかり）」。" },
+        { "surface": "カケラ", "reading": "かけら", "meaning": "碎片", "level": "N3", "note": "汉字写作「欠片」，指打碎后的小片，也比喻残存的一点点回忆。" }
+      ],
+      "grammar": [],
+      "emotion": { "kind": "quiet", "intensity": 0.5, "note": "伸手进口袋确认碎片还在——一个很小、很私密的动作。" },
+      "culture": "日语歌词常故意把普通词写成片假名（欠片→カケラ），像给这个词打上聚光灯，让「碎片」显得晶莹、值得收藏。",
+      "singingTip": null
+    },
+    {
+      "id": "l03",
+      "start": 24.0,
+      "end": 29.0,
+      "text": "目を閉じれば　星が灯るよ",
+      "tokens": [
+        { "surface": "目", "reading": "め" },
+        { "surface": "を", "reading": null },
+        { "surface": "閉じれば", "reading": "とじれば" },
+        { "surface": "　", "reading": null },
+        { "surface": "星", "reading": "ほし" },
+        { "surface": "が", "reading": null },
+        { "surface": "灯る", "reading": "ともる" },
+        { "surface": "よ", "reading": null }
+      ],
+      "translation": "只要闭上眼，星星就会一颗颗亮起",
+      "words": [
+        { "surface": "閉じる", "reading": "とじる", "meaning": "闭上、合上", "level": "N4", "note": "「目を閉じる」＝闭眼；合上书也用「本を閉じる」。" },
+        { "surface": "灯る", "reading": "ともる", "meaning": "（灯火）点亮", "level": "N2", "note": "自动词，指灯火柔柔地亮起来，比「つく」更有温度。" }
+      ],
+      "grammar": [
+        { "pattern": "〜ば（仮定形）", "explanation": "动词变成假定形加「ば」，表示「只要……就……」。「閉じる」是二类动词，去掉「る」直接加「れば」：閉じる→閉じれば；一类动词则把词尾变成え段再加ば，如 なる→なれば。", "example": "春になれば、桜が咲きます。", "exampleTranslation": "只要到了春天，樱花就会开。" }
+      ],
+      "emotion": { "kind": "tender", "intensity": 0.6, "note": "闭上眼反而看得更清楚——回忆里的星空随时会为她亮起。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l04",
+      "start": 30.0,
+      "end": 35.2,
+      "text": "あの日交わした　小指の約束",
+      "tokens": [
+        { "surface": "あの", "reading": null },
+        { "surface": "日", "reading": "ひ" },
+        { "surface": "交わした", "reading": "かわした" },
+        { "surface": "　", "reading": null },
+        { "surface": "小指", "reading": "こゆび" },
+        { "surface": "の", "reading": null },
+        { "surface": "約束", "reading": "やくそく" }
+      ],
+      "translation": "那一天，我们拉过小指许下的约定",
+      "words": [
+        { "surface": "交わす", "reading": "かわす", "meaning": "交换；互相……", "level": "N2", "note": "「約束を交わす」＝互相许下约定，是固定搭配。" },
+        { "surface": "小指", "reading": "こゆび", "meaning": "小指", "level": "N3" },
+        { "surface": "約束", "reading": "やくそく", "meaning": "约定", "level": "N4", "note": "全曲的关键词，动词用「約束する」或「約束を交わす」。" }
+      ],
+      "grammar": [
+        { "pattern": "動詞た形＋名詞", "explanation": "用た形修饰名词，表示「（过去）……的」。「交わした約束」＝曾经许下的约定。", "example": "昨日買った本をもう読みました。", "exampleTranslation": "昨天买的书我已经读完了。" }
+      ],
+      "emotion": { "kind": "longing", "intensity": 0.7, "note": "A段的落点：画面从星空拉近到两只勾着的小指，思念有了具体的形状。" },
+      "culture": "拉小指许诺来自童谣「指切りげんまん、嘘ついたら針千本飲ます」——拉钩上吊，骗人就吞一千根针。在日本它是从小孩到恋人都会做的郑重手势。",
+      "singingTip": null
+    },
+    {
+      "id": "l05",
+      "start": 36.0,
+      "end": 41.0,
+      "text": "会いたくても　もう届かない",
+      "tokens": [
+        { "surface": "会い", "reading": "あい" },
+        { "surface": "たくても", "reading": null },
+        { "surface": "　", "reading": null },
+        { "surface": "もう", "reading": null },
+        { "surface": "届かない", "reading": "とどかない" }
+      ],
+      "translation": "就算再想见你，也已经无法抵达",
+      "words": [
+        { "surface": "届く", "reading": "とどく", "meaning": "送达；够得到", "level": "N4", "note": "自动词。信件送到、手够得着、心意传达到，都用「届く」。" }
+      ],
+      "grammar": [
+        { "pattern": "〜たい", "explanation": "动词ます形去掉ます加「たい」，表示说话人「想做……」，之后可以像い形容词一样变形：会いたい→会いたくて。", "example": "冷たい水が飲みたいです。", "exampleTranslation": "我想喝冰水。" },
+        { "pattern": "〜ても", "explanation": "て形加「も」表示让步：「即使……也……」。「会いたくても」＝就算想见（也见不到）。", "example": "雨が降っても、試合はあります。", "exampleTranslation": "就算下雨，比赛也照常举行。" }
+      ],
+      "emotion": { "kind": "longing", "intensity": 0.85, "note": "B段一开口就说破残酷的事实：想见，但这份心意已无处可送。" },
+      "culture": null,
+      "singingTip": "「あいたくても」不要喊出来，越是想见越要收着唱；「もう」之后停半拍，再轻轻放出「とどかない」。"
+    },
+    {
+      "id": "l06",
+      "start": 42.0,
+      "end": 47.0,
+      "text": "君のいない空　広すぎるよ",
+      "tokens": [
+        { "surface": "君", "reading": "きみ" },
+        { "surface": "の", "reading": null },
+        { "surface": "いない", "reading": null },
+        { "surface": "空", "reading": "そら" },
+        { "surface": "　", "reading": null },
+        { "surface": "広すぎる", "reading": "ひろすぎる" },
+        { "surface": "よ", "reading": null }
+      ],
+      "translation": "没有你的这片天空，未免太辽阔了",
+      "words": [
+        { "surface": "空", "reading": "そら", "meaning": "天空", "level": "N5", "note": "在歌词里，「空」常用来盛放到不了对方身边的心情。" }
+      ],
+      "grammar": [
+        { "pattern": "〜すぎる", "explanation": "い形容词去「い」或动词ます形加「すぎる」，表示「太……、过头了」：広い→広すぎる。", "example": "この靴は大きすぎます。", "exampleTranslation": "这双鞋太大了。" }
+      ],
+      "emotion": { "kind": "melancholic", "intensity": 0.8, "note": "天空越大，一个人就显得越小；「太辽阔」其实是在说「太孤单」。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l07",
+      "start": 48.0,
+      "end": 53.0,
+      "text": "それでも夜は　優しく更けて",
+      "tokens": [
+        { "surface": "それでも", "reading": null },
+        { "surface": "夜", "reading": "よる" },
+        { "surface": "は", "reading": null },
+        { "surface": "　", "reading": null },
+        { "surface": "優しく", "reading": "やさしく" },
+        { "surface": "更けて", "reading": "ふけて" }
+      ],
+      "translation": "即便如此，夜还是温柔地深了",
+      "words": [
+        { "surface": "優しい", "reading": "やさしい", "meaning": "温柔的", "level": "N4", "note": "这里变成「優しく」修饰动词：温柔地……" },
+        { "surface": "更ける", "reading": "ふける", "meaning": "（夜）渐深", "level": "N1", "note": "「夜が更ける」是固定说法，书面、有文学味，歌词常客。" }
+      ],
+      "grammar": [
+        { "pattern": "それでも", "explanation": "接续词，「即便如此、尽管这样」。先承认前面说的事实，再温和地转折。", "example": "何度も失敗した。それでも彼はあきらめなかった。", "exampleTranslation": "失败了很多次，即便如此他也没有放弃。" }
+      ],
+      "emotion": { "kind": "bittersweet", "intensity": 0.6, "note": "悲伤没有答案，但夜色没有责怪任何人——世界依旧温柔地运转。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l08",
+      "start": 54.0,
+      "end": 59.2,
+      "text": "涙も星に　変わっていくの",
+      "tokens": [
+        { "surface": "涙", "reading": "なみだ" },
+        { "surface": "も", "reading": null },
+        { "surface": "星", "reading": "ほし" },
+        { "surface": "に", "reading": null },
+        { "surface": "　", "reading": null },
+        { "surface": "変わって", "reading": "かわって" },
+        { "surface": "いく", "reading": null },
+        { "surface": "の", "reading": null }
+      ],
+      "translation": "就连眼泪，也在渐渐化作星星",
+      "words": [
+        { "surface": "涙", "reading": "なみだ", "meaning": "眼泪", "level": "N4" },
+        { "surface": "変わる", "reading": "かわる", "meaning": "变化、变成", "level": "N4", "note": "自动词；「〜に変わる」＝变成……。他动词是「変える」。" }
+      ],
+      "grammar": [
+        { "pattern": "〜ていく", "explanation": "て形加「いく」，表示变化从现在开始向将来持续推进：「逐渐……下去」。", "example": "これからだんだん暖かくなっていきます。", "exampleTranslation": "接下来会渐渐暖和起来。" }
+      ],
+      "emotion": { "kind": "bittersweet", "intensity": 0.7, "note": "B段的出口：眼泪没有白流，它升上夜空变成了星星——悲伤开始转化。" },
+      "culture": null,
+      "singingTip": "句尾的「の」要收到几乎只剩气声，让「眼泪化作星星」慢慢消失在夜里，别唱满。"
+    },
+    {
+      "id": "l09",
+      "start": 60.0,
+      "end": 65.0,
+      "text": "忘れないよ　君がくれた光",
+      "tokens": [
+        { "surface": "忘れない", "reading": "わすれない" },
+        { "surface": "よ", "reading": null },
+        { "surface": "　", "reading": null },
+        { "surface": "君", "reading": "きみ" },
+        { "surface": "が", "reading": null },
+        { "surface": "くれた", "reading": null },
+        { "surface": "光", "reading": "ひかり" }
+      ],
+      "translation": "我不会忘，你留给我的那束光",
+      "words": [
+        { "surface": "光", "reading": "ひかり", "meaning": "光、光芒", "level": "N4", "note": "名词；动词形是「光る（ひかる）」，注意区分。" }
+      ],
+      "grammar": [
+        { "pattern": "くれる", "explanation": "授受动词，别人把东西给「我（或我这边的人）」时用，自带一层感激：「君がくれた光」＝你给我的光。", "example": "姉が誕生日にケーキをくれました。", "exampleTranslation": "姐姐在我生日时送了我蛋糕。" }
+      ],
+      "emotion": { "kind": "warm", "intensity": 0.7, "note": "A2 回到主歌旋律，但心境变了：从「失去了什么」转向「得到过什么」。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l10",
+      "start": 66.0,
+      "end": 71.0,
+      "text": "一人でも歩いて　いけるように",
+      "tokens": [
+        { "surface": "一人", "reading": "ひとり" },
+        { "surface": "でも", "reading": null },
+        { "surface": "歩いて", "reading": "あるいて" },
+        { "surface": "　", "reading": null },
+        { "surface": "いける", "reading": null },
+        { "surface": "ように", "reading": null }
+      ],
+      "translation": "愿我一个人，也能一直走下去",
+      "words": [
+        { "surface": "一人", "reading": "ひとり", "meaning": "一个人；独自", "level": "N5", "note": "「一人でも」＝哪怕只有一个人。" }
+      ],
+      "grammar": [
+        { "pattern": "〜ように（願望・目的）", "explanation": "前接可能形或ない形等非意志形式，表示「为了能……、但愿……」。句尾直接用「ように」结束，是许愿的口吻。", "example": "早く元気になりますように。", "exampleTranslation": "但愿你早日康复。" },
+        { "pattern": "可能動詞", "explanation": "一类动词词尾变え段加「る」构成可能形：行く→行ける，表示「能……」。「歩いていける」＝走得下去。", "example": "駅まで歩いて行けますか。", "exampleTranslation": "走路能到车站吗？" }
+      ],
+      "emotion": { "kind": "hopeful", "intensity": 0.7, "note": "这句是对星空许的愿：不是不难过了，而是希望自己有走下去的力气。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l11",
+      "start": 72.0,
+      "end": 77.0,
+      "text": "カケラを集めて　明日へ向かう",
+      "tokens": [
+        { "surface": "カケラ", "reading": null },
+        { "surface": "を", "reading": null },
+        { "surface": "集めて", "reading": "あつめて" },
+        { "surface": "　", "reading": null },
+        { "surface": "明日", "reading": "あした" },
+        { "surface": "へ", "reading": null },
+        { "surface": "向かう", "reading": "むかう" }
+      ],
+      "translation": "拾起一地碎片，朝着明天出发",
+      "words": [
+        { "surface": "集める", "reading": "あつめる", "meaning": "收集", "level": "N4", "note": "他动词；自动词是「集まる」（人或物聚集）。" },
+        { "surface": "明日", "reading": "あした", "meaning": "明天", "level": "N5" },
+        { "surface": "向かう", "reading": "むかう", "meaning": "朝向、前往", "level": "N4", "note": "「明日へ向かう」＝走向明天，歌词高频表达。" }
+      ],
+      "grammar": [
+        { "pattern": "〜て（動作の連続）", "explanation": "用て形把两个动作按先后顺序连起来：「集めて、向かう」＝先拾起、再出发。", "example": "朝起きて、水を飲みます。", "exampleTranslation": "早上起床后喝杯水。" }
+      ],
+      "emotion": { "kind": "resolute", "intensity": 0.8, "note": "动词从「回忆」换成了「行动」：捡起来、出发，情绪正式转向坚定。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l12",
+      "start": 78.0,
+      "end": 83.2,
+      "text": "星の降る夜に　誓いを一つ",
+      "tokens": [
+        { "surface": "星", "reading": "ほし" },
+        { "surface": "の", "reading": null },
+        { "surface": "降る", "reading": "ふる" },
+        { "surface": "夜", "reading": "よる" },
+        { "surface": "に", "reading": null },
+        { "surface": "　", "reading": null },
+        { "surface": "誓い", "reading": "ちかい" },
+        { "surface": "を", "reading": null },
+        { "surface": "一つ", "reading": "ひとつ" }
+      ],
+      "translation": "在星星坠落的夜里，立下一个誓言",
+      "words": [
+        { "surface": "降る", "reading": "ふる", "meaning": "（雨、雪等）落下", "level": "N5", "note": "「星が降る」是诗歌式表达：星光多得像要洒落下来。" },
+        { "surface": "誓い", "reading": "ちかい", "meaning": "誓言", "level": "N2", "note": "动词是「誓う（ちかう）」，比「約束」更郑重。" }
+      ],
+      "grammar": [
+        { "pattern": "数量詞の後置", "explanation": "数量词常放在「名词＋を」之后、动词之前：「誓いを一つ（立てる）」，比放在名词前更自然。", "example": "りんごを三つください。", "exampleTranslation": "请给我三个苹果。" }
+      ],
+      "emotion": { "kind": "resolute", "intensity": 0.85, "note": "A2 的收束：把整晚的思念压缩成一个郑重的誓言，交给星空见证。" },
+      "culture": "日本人习惯向星空托付心愿：七夕在短册上写愿望挂上竹枝，看到流星要在消失前默念三遍愿望。「星の降る夜」的誓言，自带被星空见证的仪式感。",
+      "singingTip": null
+    },
+    {
+      "id": "l13",
+      "start": 84.5,
+      "end": 89.8,
+      "text": "忘れない　忘れないよ　あの約束",
+      "tokens": [
+        { "surface": "忘れない", "reading": "わすれない" },
+        { "surface": "　", "reading": null },
+        { "surface": "忘れない", "reading": "わすれない" },
+        { "surface": "よ", "reading": null },
+        { "surface": "　", "reading": null },
+        { "surface": "あの", "reading": null },
+        { "surface": "約束", "reading": "やくそく" }
+      ],
+      "translation": "不会忘，绝不会忘，那个约定",
+      "words": [
+        { "surface": "忘れる", "reading": "わすれる", "meaning": "忘记", "level": "N4", "note": "「忘れない」用ない形直接收句，是歌词里最有力的否定：绝不会忘。" }
+      ],
+      "grammar": [
+        { "pattern": "終助詞「よ」", "explanation": "句尾的「よ」把自己的心意明确传达给对方，带告知、断言的语气。第二个「忘れないよ」比第一个更坚定。", "example": "大丈夫だよ、心配しないで。", "exampleTranslation": "没事的哦，别担心。" }
+      ],
+      "emotion": { "kind": "resolute", "intensity": 0.95, "note": "全曲情感顶点：同一句话说两遍，第二遍是说给远方那个人听的。" },
+      "culture": null,
+      "singingTip": "两次「わすれない」要唱出层次：第一次像自言自语，第二次加强、目光抬起来；最后「あのやくそく」一字一顿地放。"
+    },
+    {
+      "id": "l14",
+      "start": 90.5,
+      "end": 95.5,
+      "text": "星のカケラと　歩いていくよ",
+      "tokens": [
+        { "surface": "星", "reading": "ほし" },
+        { "surface": "の", "reading": null },
+        { "surface": "カケラ", "reading": null },
+        { "surface": "と", "reading": null },
+        { "surface": "　", "reading": null },
+        { "surface": "歩いて", "reading": "あるいて" },
+        { "surface": "いく", "reading": null },
+        { "surface": "よ", "reading": null }
+      ],
+      "translation": "我会和星星的碎片，一起走下去",
+      "words": [],
+      "grammar": [
+        { "pattern": "助詞「と」（共同）", "explanation": "「と」表示「和……一起」做某事：「カケラと歩く」＝与碎片同行。回忆在这里成了同行的伙伴。", "example": "週末は友だちと出かけます。", "exampleTranslation": "周末我和朋友一起出门。" }
+      ],
+      "emotion": { "kind": "hopeful", "intensity": 0.8, "note": "点题的最后一句：碎片不再是遗物，而是同行者；脚步迈向了明天。" },
+      "culture": null,
+      "singingTip": "副歌之后的释然，用微笑的口型唱「あるいていくよ」，句尾「よ」轻轻上扬，把歌送进明亮的尾奏。"
+    }
+  ]
+}

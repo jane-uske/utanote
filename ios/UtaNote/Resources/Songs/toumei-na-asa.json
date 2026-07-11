@@ -1,0 +1,352 @@
+{
+  "id": "toumei-na-asa",
+  "order": 2,
+  "title": "透明な朝",
+  "titleReading": "とうめいなあさ",
+  "titleTranslation": "透明的早晨",
+  "artist": "朝凪カナ",
+  "level": "N5",
+  "summary": "拉开窗帘，深呼吸，带上一点小勇气开始新的一天。",
+  "storyIntro": "清晨六点半，闹钟还没响，你先醒了。空气凉凉的，透明得像水；拉开窗帘、冲一杯咖啡，窗外的街道还没完全醒来。这是一首唱给「出门前五分钟」的歌——不讲大道理，一点小小的勇气就够了。",
+  "tags": ["ポップ", "朝", "前向き"],
+  "coverStyle": { "glyph": "朝", "colors": ["#6FA0B6", "#EAD9A8"], "accentHex": "#8FB8CE" },
+  "music": { "bpm": 92, "sections": [ { "name": "intro", "bars": 4, "chords": ["G","C","G","D"] }, { "name": "a1", "bars": 8, "chords": ["G","D","Em","C","G","D","C","D"] }, { "name": "a2", "bars": 8, "chords": ["G","D","Em","C","G","D","C","D"] }, { "name": "b", "bars": 8, "chords": ["C","D","Bm","Em","C","D","G","G"] }, { "name": "outro", "bars": 4, "chords": ["C","D","G","G"] } ] },
+  "durationSec": 83.48,
+  "lines": [
+    {
+      "id": "l01",
+      "start": 10.5,
+      "end": 14.6,
+      "text": "目が覚めた 空気は水みたい",
+      "tokens": [
+        { "surface": "目", "reading": "め" },
+        { "surface": "が", "reading": null },
+        { "surface": "覚めた", "reading": "さめた" },
+        { "surface": " ", "reading": null },
+        { "surface": "空気", "reading": "くうき" },
+        { "surface": "は", "reading": null },
+        { "surface": "水", "reading": "みず" },
+        { "surface": "みたい", "reading": null }
+      ],
+      "translation": "睁开眼，空气透明得像水",
+      "words": [
+        { "surface": "目が覚める", "reading": "めがさめる", "meaning": "醒来、睁开眼", "level": "N4", "note": "自然醒来用「目が覚める」；「起きる」指起身下床，两个动作先后发生。" },
+        { "surface": "空気", "reading": "くうき", "meaning": "空气", "level": "N5" }
+      ],
+      "grammar": [
+        { "pattern": "〜みたい", "explanation": "名词＋みたい，表示「像…一样」的口语比喻，比「〜のようだ」随意，日常会话和歌词里都很常用。", "example": "あの雲、わたあめみたいだね。", "exampleTranslation": "那朵云像棉花糖一样呢。" }
+      ],
+      "emotion": { "kind": "quiet", "intensity": 0.4, "note": "刚睁眼的一瞬，世界还很轻，像浸在清水里。" },
+      "culture": null,
+      "singingTip": "「めがさめた」五个音轻轻地、几乎用气声唱，像人还没完全醒。"
+    },
+    {
+      "id": "l02",
+      "start": 15.6,
+      "end": 19.8,
+      "text": "カーテンを開けて 光を入れる",
+      "tokens": [
+        { "surface": "カーテン", "reading": null },
+        { "surface": "を", "reading": null },
+        { "surface": "開けて", "reading": "あけて" },
+        { "surface": " ", "reading": null },
+        { "surface": "光", "reading": "ひかり" },
+        { "surface": "を", "reading": null },
+        { "surface": "入れる", "reading": "いれる" }
+      ],
+      "translation": "拉开窗帘，把光放进来",
+      "words": [
+        { "surface": "開ける", "reading": "あける", "meaning": "打开（他动词）", "level": "N5", "note": "他动词，前面用「を」；对应的自动词是「開く（あく）」。" },
+        { "surface": "光", "reading": "ひかり", "meaning": "光、光线", "level": "N4" }
+      ],
+      "grammar": [
+        { "pattern": "〜て、〜（动作先后）", "explanation": "用动词て形把两个动作按先后连起来：「做了A，接着B」。是日语叙述连续动作最基本的方式。", "example": "朝六時に起きて、シャワーを浴びます。", "exampleTranslation": "早上六点起床，然后冲个澡。" }
+      ],
+      "emotion": { "kind": "warm", "intensity": 0.5, "note": "拉开窗帘的动作里藏着一点期待，光一下子涌进来。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l03",
+      "start": 20.9,
+      "end": 25.0,
+      "text": "コーヒーの湯気が ゆっくり踊る",
+      "tokens": [
+        { "surface": "コーヒー", "reading": null },
+        { "surface": "の", "reading": null },
+        { "surface": "湯気", "reading": "ゆげ" },
+        { "surface": "が", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "ゆっくり", "reading": null },
+        { "surface": "踊る", "reading": "おどる" }
+      ],
+      "translation": "咖啡的热气，慢慢地起舞",
+      "words": [
+        { "surface": "湯気", "reading": "ゆげ", "meaning": "热气、水汽", "level": "N2", "note": "热饮、浴缸冒出的白色水汽。超出N5，但在生活场景歌词里很常见。" },
+        { "surface": "踊る", "reading": "おどる", "meaning": "跳舞", "level": "N4", "note": "这里是拟人：热气摇摇晃晃往上升，像在跳舞。" }
+      ],
+      "grammar": [],
+      "emotion": { "kind": "warm", "intensity": 0.55, "note": "盯着热气发呆的小幸福，时间在这一句慢了下来。" },
+      "culture": "清晨一杯冒着「湯気」的咖啡或热茶，是日剧和日语歌里标志性的生活意象，代表一个人独处的安稳时刻。注意日语「湯（ゆ）」专指热水，冷水才叫「水」。",
+      "singingTip": null
+    },
+    {
+      "id": "l04",
+      "start": 26.1,
+      "end": 30.6,
+      "text": "静かな部屋で 朝が始まる",
+      "tokens": [
+        { "surface": "静かな", "reading": "しずかな" },
+        { "surface": "部屋", "reading": "へや" },
+        { "surface": "で", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "朝", "reading": "あさ" },
+        { "surface": "が", "reading": null },
+        { "surface": "始まる", "reading": "はじまる" }
+      ],
+      "translation": "安静的房间里，早晨开始了",
+      "words": [
+        { "surface": "静か", "reading": "しずか", "meaning": "安静的（な形容词）", "level": "N5" },
+        { "surface": "始まる", "reading": "はじまる", "meaning": "开始（自动词）", "level": "N5", "note": "自动词，事物「自己开始」；他动词是「始める」，如「勉強を始める」。" }
+      ],
+      "grammar": [
+        { "pattern": "〜が始まる", "explanation": "「始まる」是自动词，表示某事自然而然地开始，主语用「が」标记，不需要人为对象。", "example": "もうすぐ映画が始まりますよ。", "exampleTranslation": "电影马上就要开始了哦。" }
+      ],
+      "emotion": { "kind": "quiet", "intensity": 0.5, "note": "房间很安静，但「开始」已经悄悄发生了。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l05",
+      "start": 31.7,
+      "end": 35.8,
+      "text": "窓の外 街はまだ眠そう",
+      "tokens": [
+        { "surface": "窓", "reading": "まど" },
+        { "surface": "の", "reading": null },
+        { "surface": "外", "reading": "そと" },
+        { "surface": " ", "reading": null },
+        { "surface": "街", "reading": "まち" },
+        { "surface": "は", "reading": null },
+        { "surface": "まだ", "reading": null },
+        { "surface": "眠そう", "reading": "ねむそう" }
+      ],
+      "translation": "窗外的街道，还睡眼惺忪",
+      "words": [
+        { "surface": "窓", "reading": "まど", "meaning": "窗户", "level": "N5" },
+        { "surface": "眠い", "reading": "ねむい", "meaning": "困、想睡", "level": "N5", "note": "歌词里的「眠そう」＝看起来很困的样子。" }
+      ],
+      "grammar": [
+        { "pattern": "〜そう（样态）", "explanation": "い形容词去「い」＋そう，表示「看上去…」，是根据眼前样子做的直观判断。", "example": "このケーキ、おいしそう！", "exampleTranslation": "这个蛋糕看起来好好吃！" }
+      ],
+      "emotion": { "kind": "tender", "intensity": 0.45, "note": "隔着玻璃看还没醒的街道，带着一点温柔的旁观感。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l06",
+      "start": 36.9,
+      "end": 41.0,
+      "text": "空はすこしずつ 明るくなってく",
+      "tokens": [
+        { "surface": "空", "reading": "そら" },
+        { "surface": "は", "reading": null },
+        { "surface": "すこしずつ", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "明るく", "reading": "あかるく" },
+        { "surface": "なってく", "reading": null }
+      ],
+      "translation": "天空一点一点，亮了起来",
+      "words": [
+        { "surface": "空", "reading": "そら", "meaning": "天空", "level": "N5" },
+        { "surface": "明るい", "reading": "あかるい", "meaning": "明亮的；开朗的", "level": "N5", "note": "既能形容天色、房间，也能形容性格开朗。" }
+      ],
+      "grammar": [
+        { "pattern": "い形容词＋くなる", "explanation": "い形容词去「い」加「く」再接なる，表示状态变化「变得…」。", "example": "最近、朝が寒くなりました。", "exampleTranslation": "最近早上变冷了。" },
+        { "pattern": "〜ていく（〜てく）", "explanation": "接在て形后，表示变化朝着将来持续下去；口语和歌词里常缩成「てく」，更轻快。", "example": "これからもっと暖かくなっていくよ。", "exampleTranslation": "今后会越来越暖和哦。" }
+      ],
+      "emotion": { "kind": "hopeful", "intensity": 0.55, "note": "天色一点点亮，心情也跟着往上爬。" },
+      "culture": null,
+      "singingTip": "「なってく」的尾音不要收死，顺着上行的旋律轻轻放出去，唱出天色渐亮的感觉。"
+    },
+    {
+      "id": "l07",
+      "start": 42.1,
+      "end": 46.0,
+      "text": "深呼吸ひとつ 冷たい風",
+      "tokens": [
+        { "surface": "深呼吸", "reading": "しんこきゅう" },
+        { "surface": "ひとつ", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "冷たい", "reading": "つめたい" },
+        { "surface": "風", "reading": "かぜ" }
+      ],
+      "translation": "深呼吸一次，风凉凉的",
+      "words": [
+        { "surface": "深呼吸", "reading": "しんこきゅう", "meaning": "深呼吸", "level": "N3", "note": "する动词：深呼吸する。紧张时日本人也说「深呼吸して」。" },
+        { "surface": "冷たい", "reading": "つめたい", "meaning": "凉的、冰凉的", "level": "N5", "note": "摸起来、接触到的凉用「冷たい」；天气冷用「寒い」。" }
+      ],
+      "grammar": [
+        { "pattern": "名词＋ひとつ（数量词后置）", "explanation": "日语数量词常直接放在名词后面，不加「的」，简洁又有节奏感，歌词里尤其常见。", "example": "みかんをひとつください。", "exampleTranslation": "请给我一个橘子。" }
+      ],
+      "emotion": { "kind": "bright", "intensity": 0.6, "note": "冷空气进到肺里，人一下子清醒了。" },
+      "culture": null,
+      "singingTip": "唱之前真的吸一口气，「しんこきゅう」的「し」带着气息送出来，声音会非常贴题。"
+    },
+    {
+      "id": "l08",
+      "start": 47.1,
+      "end": 51.6,
+      "text": "あたらしい一日が 待っている",
+      "tokens": [
+        { "surface": "あたらしい", "reading": null },
+        { "surface": "一日", "reading": "いちにち" },
+        { "surface": "が", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "待って", "reading": "まって" },
+        { "surface": "いる", "reading": null }
+      ],
+      "translation": "崭新的一天，正等着我",
+      "words": [
+        { "surface": "一日", "reading": "いちにち", "meaning": "一天、一整天", "level": "N5", "note": "读「いちにち」；日历上的「一号」则读「ついたち」。" },
+        { "surface": "待つ", "reading": "まつ", "meaning": "等待", "level": "N5" }
+      ],
+      "grammar": [
+        { "pattern": "〜ている（状态持续）", "explanation": "て形＋いる，表示动作或状态正在持续。这里是「一直在等着」的状态。", "example": "駅で友だちが待っています。", "exampleTranslation": "朋友正在车站等着。" }
+      ],
+      "emotion": { "kind": "hopeful", "intensity": 0.65, "note": "把「新的一天」写成在等你的人，被动的时间变成温柔的邀请。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l09",
+      "start": 52.5,
+      "end": 56.4,
+      "text": "大丈夫 今日も晴れるから",
+      "tokens": [
+        { "surface": "大丈夫", "reading": "だいじょうぶ" },
+        { "surface": " ", "reading": null },
+        { "surface": "今日", "reading": "きょう" },
+        { "surface": "も", "reading": null },
+        { "surface": "晴れる", "reading": "はれる" },
+        { "surface": "から", "reading": null }
+      ],
+      "translation": "没关系的，今天也会放晴",
+      "words": [
+        { "surface": "大丈夫", "reading": "だいじょうぶ", "meaning": "没关系、没问题", "level": "N5" },
+        { "surface": "晴れる", "reading": "はれる", "meaning": "放晴", "level": "N5", "note": "也常用来比喻心情豁然开朗：気持ちが晴れる。" }
+      ],
+      "grammar": [
+        { "pattern": "〜から（原因）", "explanation": "接在句尾表示原因理由：「因为…（所以没关系）」。放在句末不说结果，是日语里很自然的安慰句式。", "example": "明日は休みだから、ゆっくり寝ます。", "exampleTranslation": "明天放假，所以要好好睡个懒觉。" }
+      ],
+      "emotion": { "kind": "resolute", "intensity": 0.7, "note": "副歌第一句，是说给自己听的「没事的」，语气笃定。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l10",
+      "start": 57.1,
+      "end": 61.0,
+      "text": "小さな勇気を ポケットに入れて",
+      "tokens": [
+        { "surface": "小さな", "reading": "ちいさな" },
+        { "surface": "勇気", "reading": "ゆうき" },
+        { "surface": "を", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "ポケット", "reading": null },
+        { "surface": "に", "reading": null },
+        { "surface": "入れて", "reading": "いれて" }
+      ],
+      "translation": "把小小的勇气，装进口袋",
+      "words": [
+        { "surface": "勇気", "reading": "ゆうき", "meaning": "勇气", "level": "N4" },
+        { "surface": "入れる", "reading": "いれる", "meaning": "放入、装进（他动词）", "level": "N5", "note": "他动词；对应的自动词是「入る（はいる）」。和第二句「光を入れる」形成呼应。" }
+      ],
+      "grammar": [
+        { "pattern": "AをBに入れる", "explanation": "「把A放进B」。「を」标记被放的东西，「に」标记放入的落点。", "example": "かばんに本を入れます。", "exampleTranslation": "把书放进包里。" }
+      ],
+      "emotion": { "kind": "tender", "intensity": 0.6, "note": "勇气不用很大，装进口袋刚刚好——全曲的题眼。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l11",
+      "start": 61.7,
+      "end": 65.6,
+      "text": "さあ 行きましょう 朝の街へ",
+      "tokens": [
+        { "surface": "さあ", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "行きましょう", "reading": "いきましょう" },
+        { "surface": " ", "reading": null },
+        { "surface": "朝", "reading": "あさ" },
+        { "surface": "の", "reading": null },
+        { "surface": "街", "reading": "まち" },
+        { "surface": "へ", "reading": null }
+      ],
+      "translation": "来，出发吧，去清晨的街上",
+      "words": [
+        { "surface": "街", "reading": "まち", "meaning": "街道、城市", "level": "N4", "note": "与「町」同音；歌词里常写「街」，更有城市街景的画面感。" }
+      ],
+      "grammar": [
+        { "pattern": "〜ましょう", "explanation": "ます形去「ます」＋ましょう，表示提议、号召「（一起）…吧」；也可以像这里一样给自己打气。", "example": "そろそろ帰りましょう。", "exampleTranslation": "差不多该回家了吧。" },
+        { "pattern": "〜へ（方向）", "explanation": "助词「へ」表示移动的方向，此时读「え」。与「に」相近，但「へ」更强调「朝着那个方向去」。", "example": "夏休みに沖縄へ行きます。", "exampleTranslation": "暑假要去冲绳。" }
+      ],
+      "emotion": { "kind": "bright", "intensity": 0.8, "note": "副歌最亮的一句，推开门迈出去的号召。" },
+      "culture": "「さあ」是日语里招呼自己或同伴行动的发语词，相当于中文的「来吧、走吧」。广播体操的开头、出发前的吆喝里都能听到，一出口就有「要开始了」的气氛。",
+      "singingTip": "「さあ」是全曲最亮的入口，从腹部给气一下打开；「いきましょう」全程保持微笑口型，音色会自然变亮。"
+    },
+    {
+      "id": "l12",
+      "start": 66.3,
+      "end": 70.2,
+      "text": "白い道を まっすぐ歩こう",
+      "tokens": [
+        { "surface": "白い", "reading": "しろい" },
+        { "surface": "道", "reading": "みち" },
+        { "surface": "を", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "まっすぐ", "reading": null },
+        { "surface": "歩こう", "reading": "あるこう" }
+      ],
+      "translation": "沿着发白的路，笔直走下去",
+      "words": [
+        { "surface": "道", "reading": "みち", "meaning": "道路", "level": "N5" },
+        { "surface": "まっすぐ", "reading": "まっすぐ", "meaning": "笔直地、径直", "level": "N5", "note": "问路时常听到：まっすぐ行ってください（请直走）。" }
+      ],
+      "grammar": [
+        { "pattern": "动词意向形（〜おう）", "explanation": "「〜ましょう」的普通体：五段动词词尾变お段＋う，如 歩く→歩こう。自言自语给自己鼓劲时非常常用。", "example": "今日は早く家に帰ろう。", "exampleTranslation": "今天早点回家吧。" }
+      ],
+      "emotion": { "kind": "resolute", "intensity": 0.75, "note": "选定方向就直直地走，不再犹豫。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l13",
+      "start": 71.0,
+      "end": 76.0,
+      "text": "透明な朝が 背中を押すよ",
+      "tokens": [
+        { "surface": "透明な", "reading": "とうめいな" },
+        { "surface": "朝", "reading": "あさ" },
+        { "surface": "が", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "背中", "reading": "せなか" },
+        { "surface": "を", "reading": null },
+        { "surface": "押す", "reading": "おす" },
+        { "surface": "よ", "reading": null }
+      ],
+      "translation": "透明的早晨，轻轻推着我的背",
+      "words": [
+        { "surface": "透明", "reading": "とうめい", "meaning": "透明", "level": "N3" },
+        { "surface": "背中を押す", "reading": "せなかをおす", "meaning": "（惯用）推人一把、给人迈出一步的鼓励", "level": "N3", "note": "字面是「推后背」，实际几乎都用比喻义，应援歌里的高频表达。" }
+      ],
+      "grammar": [
+        { "pattern": "〜よ（终助词）", "explanation": "句尾语气词，把对方还不知道的信息轻轻递过去，带一点肯定和鼓励的温度。", "example": "この店のパン、おいしいですよ。", "exampleTranslation": "这家店的面包很好吃哦。" }
+      ],
+      "emotion": { "kind": "hopeful", "intensity": 0.85, "note": "标题在最后一句落地：透明的早晨在背后轻轻推你一把。" },
+      "culture": "「背中を押す（推后背）」是日语高频惯用语：不是真的推，而是「在背后给你鼓励，让你迈出那一步」。毕业歌、应援歌里出镜率极高，学会它就听懂了半个日语打气文化。",
+      "singingTip": "「おすよ」的「よ」轻轻上扬后马上收住，像把话温柔地送出去，不要用力甩尾音。"
+    }
+  ]
+}

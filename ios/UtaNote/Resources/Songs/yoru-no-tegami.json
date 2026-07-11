@@ -1,0 +1,381 @@
+{
+  "id": "yoru-no-tegami",
+  "order": 1,
+  "title": "夜の手紙",
+  "titleReading": "よるのてがみ",
+  "titleTranslation": "夜的信",
+  "artist": "白瀬まひろ",
+  "level": "N5",
+  "summary": "深夜提笔，写给远方之人的一封信。",
+  "storyIntro": "深夜，窗边只亮着一盏小灯。睡不着的人摊开信纸，给住在远方的重要之人写信，想起同一片月光下并肩走过的夏夜。天快亮时，写信的人跑向邮筒——这封装满心意的信，一定会抵达。",
+  "tags": ["バラード", "夜", "手紙"],
+  "coverStyle": { "glyph": "月", "colors": ["#2E3A56", "#7A6A58"], "accentHex": "#93A5C4" },
+  "music": { "bpm": 72, "sections": [ { "name": "intro", "bars": 4, "chords": ["Am","F","C","G"] }, { "name": "verse1", "bars": 8, "chords": ["C","G","Am","Em","F","C","Dm","G"] }, { "name": "verse2", "bars": 8, "chords": ["C","G","Am","Em","F","C","Dm","G"] }, { "name": "chorus", "bars": 8, "chords": ["F","G","Em","Am","F","G","C","C"] }, { "name": "outro", "bars": 4, "chords": ["F","G","C","C"] } ] },
+  "durationSec": 106.67,
+  "lines": [
+    {
+      "id": "l01",
+      "start": 13.5,
+      "end": 18.6,
+      "text": "夜の窓に 小さな灯り",
+      "tokens": [
+        { "surface": "夜", "reading": "よる" },
+        { "surface": "の", "reading": null },
+        { "surface": "窓", "reading": "まど" },
+        { "surface": "に", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "小さな", "reading": "ちいさな" },
+        { "surface": "灯り", "reading": "あかり" }
+      ],
+      "translation": "夜里的窗边，亮着一盏小小的灯",
+      "words": [
+        { "surface": "窓", "reading": "まど", "meaning": "窗户", "level": "N5" },
+        { "surface": "小さな", "reading": "ちいさな", "meaning": "小小的", "level": "N5", "note": "连体词，只能放在名词前面：小さな灯り。不能像「小さい」那样单独作谓语。" },
+        { "surface": "灯り", "reading": "あかり", "meaning": "灯光、亮光", "level": "N4", "note": "比「電気」柔和、有温度，歌词里很常见。" }
+      ],
+      "grammar": [],
+      "emotion": { "kind": "quiet", "intensity": 0.4, "note": "全曲的第一个画面：深夜里唯一亮着的，是窗边一盏小灯。" },
+      "culture": null,
+      "singingTip": "轻声进入，像怕吵醒谁。「ちいさな」的「ちい」是长音，要唱满两拍再落到「灯り」。"
+    },
+    {
+      "id": "l02",
+      "start": 20.0,
+      "end": 25.0,
+      "text": "きみへの手紙を 書いている",
+      "tokens": [
+        { "surface": "きみ", "reading": null },
+        { "surface": "へ", "reading": null },
+        { "surface": "の", "reading": null },
+        { "surface": "手紙", "reading": "てがみ" },
+        { "surface": "を", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "書いて", "reading": "かいて" },
+        { "surface": "いる", "reading": null }
+      ],
+      "translation": "我正在写一封给你的信",
+      "words": [
+        { "surface": "手紙", "reading": "てがみ", "meaning": "信、书信", "level": "N5" },
+        { "surface": "書く", "reading": "かく", "meaning": "写", "level": "N5", "note": "「手紙を書く」是写信的固定搭配。" }
+      ],
+      "grammar": [
+        { "pattern": "〜ている（动作进行）", "explanation": "动词て形＋いる，表示动作正在进行中，相当于中文的「正在～」。", "example": "妹は部屋で音楽を聞いている。", "exampleTranslation": "妹妹正在房间里听音乐。" },
+        { "pattern": "〜への＋名詞", "explanation": "「へ」表示方向或对象，加「の」后可以直接修饰名词：きみへの手紙＝给你的信。", "example": "母への プレゼントを買った。", "exampleTranslation": "买了送给妈妈的礼物。" }
+      ],
+      "emotion": { "kind": "tender", "intensity": 0.5, "note": "落笔写下称呼的瞬间，心里那个人的脸浮现出来。" },
+      "culture": "歌词里的「きみ」多写成平假名，比汉字「君」看起来更柔软，常用来称呼恋人或最亲近的朋友。",
+      "singingTip": null
+    },
+    {
+      "id": "l03",
+      "start": 26.7,
+      "end": 31.8,
+      "text": "眠れない夜 きみを思い出す",
+      "tokens": [
+        { "surface": "眠れない", "reading": "ねむれない" },
+        { "surface": "夜", "reading": "よる" },
+        { "surface": " ", "reading": null },
+        { "surface": "きみ", "reading": null },
+        { "surface": "を", "reading": null },
+        { "surface": "思い出す", "reading": "おもいだす" }
+      ],
+      "translation": "睡不着的夜里，总会想起你",
+      "words": [
+        { "surface": "眠る", "reading": "ねむる", "meaning": "睡着、入睡", "level": "N4", "note": "「寝る」偏「上床睡觉」这个动作，「眠る」偏「睡着」的状态；睡不着用「眠れない」。" },
+        { "surface": "思い出す", "reading": "おもいだす", "meaning": "想起、回忆起", "level": "N4" }
+      ],
+      "grammar": [
+        { "pattern": "〜ない＋名詞（否定修饰）", "explanation": "动词ない形可以直接放在名词前面修饰它：眠れない夜＝睡不着的夜。", "example": "誰もいない教室はとても静かだ。", "exampleTranslation": "空无一人的教室非常安静。" }
+      ],
+      "emotion": { "kind": "longing", "intensity": 0.55, "note": "失眠的原因终于说出口：睡不着，是因为在想你。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l04",
+      "start": 33.4,
+      "end": 39.2,
+      "text": "同じ月が 今夜も見える",
+      "tokens": [
+        { "surface": "同じ", "reading": "おなじ" },
+        { "surface": "月", "reading": "つき" },
+        { "surface": "が", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "今夜", "reading": "こんや" },
+        { "surface": "も", "reading": null },
+        { "surface": "見える", "reading": "みえる" }
+      ],
+      "translation": "今夜也看得见，那同一轮月亮",
+      "words": [
+        { "surface": "同じ", "reading": "おなじ", "meaning": "相同的", "level": "N5", "note": "特殊：修饰名词时不加「な」也不加「の」，直接说「同じ月」。" },
+        { "surface": "今夜", "reading": "こんや", "meaning": "今晚", "level": "N4" },
+        { "surface": "見える", "reading": "みえる", "meaning": "看得见", "level": "N4" }
+      ],
+      "grammar": [
+        { "pattern": "〜が見える", "explanation": "「見える」是自动词，表示景物自然映入眼帘（不是刻意去看），对象用「が」标记。", "example": "ホテルの窓から海が見えます。", "exampleTranslation": "从酒店的窗户能看见大海。" }
+      ],
+      "emotion": { "kind": "nostalgic", "intensity": 0.6, "note": "抬头看见月亮，想到对方也许正看着同一轮——回忆的开关被打开。" },
+      "culture": null,
+      "singingTip": "「みえる」收尾要渐弱，像目光慢慢从月亮上移开，为下一段回忆留白。"
+    },
+    {
+      "id": "l05",
+      "start": 40.3,
+      "end": 45.5,
+      "text": "あの夏の夜 二人で歩いた",
+      "tokens": [
+        { "surface": "あの", "reading": null },
+        { "surface": "夏", "reading": "なつ" },
+        { "surface": "の", "reading": null },
+        { "surface": "夜", "reading": "よる" },
+        { "surface": " ", "reading": null },
+        { "surface": "二人", "reading": "ふたり" },
+        { "surface": "で", "reading": null },
+        { "surface": "歩いた", "reading": "あるいた" }
+      ],
+      "translation": "那个夏天的夜晚，我们并肩走过",
+      "words": [
+        { "surface": "夏", "reading": "なつ", "meaning": "夏天", "level": "N5" },
+        { "surface": "二人", "reading": "ふたり", "meaning": "两个人", "level": "N5", "note": "「一人ひとり」「二人ふたり」是特殊读法；三人「さんにん」起基本规则化，但「四人」读「よにん」，要单独记。" },
+        { "surface": "歩く", "reading": "あるく", "meaning": "走路、步行", "level": "N5" }
+      ],
+      "grammar": [
+        { "pattern": "人数＋で", "explanation": "「で」接在人数后面，表示「几个人一起」做某事。", "example": "週末は三人で映画を見た。", "exampleTranslation": "周末三个人一起看了电影。" }
+      ],
+      "emotion": { "kind": "nostalgic", "intensity": 0.7, "note": "回忆正式展开：镜头切回那个夏夜，两个人的脚步声。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l06",
+      "start": 46.8,
+      "end": 52.0,
+      "text": "月の光が 道を照らした",
+      "tokens": [
+        { "surface": "月", "reading": "つき" },
+        { "surface": "の", "reading": null },
+        { "surface": "光", "reading": "ひかり" },
+        { "surface": "が", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "道", "reading": "みち" },
+        { "surface": "を", "reading": null },
+        { "surface": "照らした", "reading": "てらした" }
+      ],
+      "translation": "月光照亮了脚下的路",
+      "words": [
+        { "surface": "光", "reading": "ひかり", "meaning": "光、光芒", "level": "N4" },
+        { "surface": "照らす", "reading": "てらす", "meaning": "照亮", "level": "N3", "note": "他动词，「光が道を照らす」；它的自动词兄弟是「照る」（日が照る，太阳照耀）。" }
+      ],
+      "grammar": [],
+      "emotion": { "kind": "warm", "intensity": 0.6, "note": "回忆里最亮的一帧：不需要路灯，月光就够了。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l07",
+      "start": 53.4,
+      "end": 58.4,
+      "text": "遠い町で 元気ですか",
+      "tokens": [
+        { "surface": "遠い", "reading": "とおい" },
+        { "surface": "町", "reading": "まち" },
+        { "surface": "で", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "元気", "reading": "げんき" },
+        { "surface": "です", "reading": null },
+        { "surface": "か", "reading": null }
+      ],
+      "translation": "在遥远的城市，你还好吗",
+      "words": [
+        { "surface": "遠い", "reading": "とおい", "meaning": "远的", "level": "N5" },
+        { "surface": "元気", "reading": "げんき", "meaning": "精神好、健康", "level": "N5" }
+      ],
+      "grammar": [
+        { "pattern": "場所＋で", "explanation": "「で」接在地点后面，表示动作、状态发生的场所，相当于「在～」。", "example": "図書館で日本語を勉強します。", "exampleTranslation": "在图书馆学习日语。" }
+      ],
+      "emotion": { "kind": "longing", "intensity": 0.7, "note": "从回忆抽回现实，隔着距离轻轻问出一句近况。" },
+      "culture": "「元気ですか」是日本书信和久别重逢时的定番问候。电影《情书》里那句雪中的「お元気ですか」让它成了跨越距离的思念的代名词。",
+      "singingTip": null
+    },
+    {
+      "id": "l08",
+      "start": 60.0,
+      "end": 65.4,
+      "text": "会いたい気持ちを ペンにのせて",
+      "tokens": [
+        { "surface": "会いたい", "reading": "あいたい" },
+        { "surface": "気持ち", "reading": "きもち" },
+        { "surface": "を", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "ペン", "reading": null },
+        { "surface": "に", "reading": null },
+        { "surface": "のせて", "reading": null }
+      ],
+      "translation": "把想见你的心情，都落在笔尖",
+      "words": [
+        { "surface": "会う", "reading": "あう", "meaning": "见面", "level": "N5", "note": "见面的对象用「に」：友達に会う，不能用「を」。" },
+        { "surface": "気持ち", "reading": "きもち", "meaning": "心情、感受", "level": "N4" },
+        { "surface": "のせる", "reading": "のせる", "meaning": "放上、载上", "level": "N4", "note": "汉字写「乗せる」。这里是比喻：让心情「搭乘」在笔上，随信出发。" }
+      ],
+      "grammar": [
+        { "pattern": "〜たい（想要做）", "explanation": "动词ます形去掉ます＋たい，表示说话人自己想做某事：会いたい＝想见（你）。", "example": "冷たい水が飲みたい。", "exampleTranslation": "好想喝一杯冰水。" }
+      ],
+      "emotion": { "kind": "longing", "intensity": 0.75, "note": "思念在这里第一次被直接说出口：会いたい。" },
+      "culture": null,
+      "singingTip": "「あいたい」的「あ」是全曲第一处感情重音，气息往前送一点，但别唱破深夜的安静。"
+    },
+    {
+      "id": "l09",
+      "start": 67.0,
+      "end": 71.5,
+      "text": "この手紙よ 海を越えて",
+      "tokens": [
+        { "surface": "この", "reading": null },
+        { "surface": "手紙", "reading": "てがみ" },
+        { "surface": "よ", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "海", "reading": "うみ" },
+        { "surface": "を", "reading": null },
+        { "surface": "越えて", "reading": "こえて" }
+      ],
+      "translation": "这封信啊，越过大海",
+      "words": [
+        { "surface": "海", "reading": "うみ", "meaning": "大海", "level": "N5" },
+        { "surface": "越える", "reading": "こえる", "meaning": "越过、跨过", "level": "N3", "note": "山を越える、国境を越える——跨过空间上的界线都用它。" }
+      ],
+      "grammar": [],
+      "emotion": { "kind": "hopeful", "intensity": 0.7, "note": "副歌起飞：对着手里的信喊话，让它替自己去远行。" },
+      "culture": "把心事托付给一封实体的信，让它代替自己旅行——在电子邮件时代的日本歌里，「手紙」反而成了最郑重的浪漫。",
+      "singingTip": null
+    },
+    {
+      "id": "l10",
+      "start": 72.3,
+      "end": 76.8,
+      "text": "きみの町へ 飛んでいけ",
+      "tokens": [
+        { "surface": "きみ", "reading": null },
+        { "surface": "の", "reading": null },
+        { "surface": "町", "reading": "まち" },
+        { "surface": "へ", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "飛んで", "reading": "とんで" },
+        { "surface": "いけ", "reading": null }
+      ],
+      "translation": "朝着你的城市，飞去吧",
+      "words": [
+        { "surface": "飛ぶ", "reading": "とぶ", "meaning": "飞", "level": "N5" },
+        { "surface": "町", "reading": "まち", "meaning": "城市、街道", "level": "N5" }
+      ],
+      "grammar": [
+        { "pattern": "〜ていく（朝远处移动）", "explanation": "动词て形＋いく，表示动作朝着离开说话人的方向进行；歌里用命令形「いけ」，是在给信打气。", "example": "鳥が南の空へ飛んでいった。", "exampleTranslation": "鸟儿朝南边的天空飞走了。" }
+      ],
+      "emotion": { "kind": "hopeful", "intensity": 0.8, "note": "副歌最高点之一：用命令形给信下达出发的号令。" },
+      "culture": null,
+      "singingTip": "「とんでいけ」是命令形，收尾短促有力，但音量不加大——是深夜里攥紧拳头的那种用力。"
+    },
+    {
+      "id": "l11",
+      "start": 77.8,
+      "end": 82.6,
+      "text": "わたしはここで 生きているよ",
+      "tokens": [
+        { "surface": "わたし", "reading": null },
+        { "surface": "は", "reading": null },
+        { "surface": "ここ", "reading": null },
+        { "surface": "で", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "生きて", "reading": "いきて" },
+        { "surface": "いる", "reading": null },
+        { "surface": "よ", "reading": null }
+      ],
+      "translation": "我在这里，也好好地活着",
+      "words": [
+        { "surface": "生きる", "reading": "いきる", "meaning": "活着、生活", "level": "N4", "note": "比「住んでいる」（住在）更有分量，是「我在好好过日子」的宣言。" }
+      ],
+      "grammar": [
+        { "pattern": "終助詞〜よ（告知）", "explanation": "句尾的「よ」用来把对方不知道的信息告诉对方，带着「放心吧」的语气。", "example": "この店のパンはおいしいよ。", "exampleTranslation": "这家店的面包很好吃哦。" }
+      ],
+      "emotion": { "kind": "resolute", "intensity": 0.75, "note": "整封信最想说的一句：别担心我，我在这里好好活着。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l12",
+      "start": 83.5,
+      "end": 88.0,
+      "text": "夜明けの空が 白くなる",
+      "tokens": [
+        { "surface": "夜明け", "reading": "よあけ" },
+        { "surface": "の", "reading": null },
+        { "surface": "空", "reading": "そら" },
+        { "surface": "が", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "白く", "reading": "しろく" },
+        { "surface": "なる", "reading": null }
+      ],
+      "translation": "黎明的天空，一点点泛起白色",
+      "words": [
+        { "surface": "夜明け", "reading": "よあけ", "meaning": "黎明、拂晓", "level": "N3", "note": "字面是「夜が明ける」（夜晚亮起来）的名词形。" },
+        { "surface": "空", "reading": "そら", "meaning": "天空", "level": "N5" }
+      ],
+      "grammar": [
+        { "pattern": "い形容詞＋くなる（变化）", "explanation": "い形容词把「い」变成「く」再接「なる」，表示状态发生变化：白い→白くなる（变白）。", "example": "冬は日が短くなります。", "exampleTranslation": "冬天白天会变短。" }
+      ],
+      "emotion": { "kind": "bright", "intensity": 0.65, "note": "写了一整夜，抬头时天已经开始亮了——时间的流逝全在这句里。" },
+      "culture": null,
+      "singingTip": null
+    },
+    {
+      "id": "l13",
+      "start": 88.9,
+      "end": 93.2,
+      "text": "ポストへ走る 朝の道",
+      "tokens": [
+        { "surface": "ポスト", "reading": null },
+        { "surface": "へ", "reading": null },
+        { "surface": "走る", "reading": "はしる" },
+        { "surface": " ", "reading": null },
+        { "surface": "朝", "reading": "あさ" },
+        { "surface": "の", "reading": null },
+        { "surface": "道", "reading": "みち" }
+      ],
+      "translation": "沿着清晨的路，我跑向邮筒",
+      "words": [
+        { "surface": "ポスト", "reading": "ぽすと", "meaning": "邮筒、信箱", "level": "N4" },
+        { "surface": "走る", "reading": "はしる", "meaning": "跑", "level": "N5" }
+      ],
+      "grammar": [
+        { "pattern": "〜へ（移动方向）", "explanation": "「へ」标记移动的方向或目的地，读作「え」，常可与「に」互换，但「へ」更强调「朝着那个方向」。", "example": "夏休みに沖縄へ行きます。", "exampleTranslation": "暑假要去冲绳。" }
+      ],
+      "emotion": { "kind": "bright", "intensity": 0.7, "note": "全曲唯一的奔跑：夜写完的信，要趁天刚亮送出去。" },
+      "culture": "日本街头的「ポスト」是红色圆柱形邮筒，收信口分「手紙・はがき」和「大型郵便」两种，至今仍随处可见，是信件文化的象征。",
+      "singingTip": null
+    },
+    {
+      "id": "l14",
+      "start": 94.9,
+      "end": 101.5,
+      "text": "きっと届くよ この手紙",
+      "tokens": [
+        { "surface": "きっと", "reading": null },
+        { "surface": "届く", "reading": "とどく" },
+        { "surface": "よ", "reading": null },
+        { "surface": " ", "reading": null },
+        { "surface": "この", "reading": null },
+        { "surface": "手紙", "reading": "てがみ" }
+      ],
+      "translation": "这封信，一定会送到你手中",
+      "words": [
+        { "surface": "届く", "reading": "とどく", "meaning": "送达、寄到", "level": "N4", "note": "自动词：手紙が届く（信到了）；主动去送用他动词「届ける」。" },
+        { "surface": "きっと", "reading": "きっと", "meaning": "一定、肯定", "level": "N4" }
+      ],
+      "grammar": [
+        { "pattern": "きっと〜（表信念的推断）", "explanation": "副词「きっと」放在句首或动词前，表示说话人很有把握的推测或坚定的信念：一定会～。", "example": "あなたならきっとできます。", "exampleTranslation": "是你的话，一定做得到。" }
+      ],
+      "emotion": { "kind": "hopeful", "intensity": 0.85, "note": "收束全曲的信念：距离再远，这份心意一定会抵达。" },
+      "culture": null,
+      "singingTip": "「きっと」的促音「っ」要真正停顿一拍再送出「と」，这个小小的顿挫就是「一定」的分量；末尾「てがみ」随伴奏渐弱拉长。"
+    }
+  ]
+}

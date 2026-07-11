@@ -16,3 +16,8 @@ dist/
 .DS_Store
 cloudfunctions/*/node_modules/
 scripts/local-tts-server/.env.local
+
+# ios（UtaNote.xcodeproj 由 xcodegen generate 生成）
+ios/build/
+ios/build-device/
+ios/UtaNote.xcodeproj/

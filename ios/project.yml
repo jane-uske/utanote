@@ -1,0 +1,69 @@
+name: UtaNote
+options:
+  bundleIdPrefix: com.rare
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: T3NXW85FQQ
+targets:
+  UtaNote:
+    type: application
+    platform: iOS
+    sources:
+      - path: UtaNote/Sources
+      - path: UtaNote/Resources/Assets.xcassets
+      - path: UtaNote/Resources/Songs
+        type: folder
+        buildPhase: resources
+      - path: UtaNote/Resources/Audio
+        type: folder
+        buildPhase: resources
+    info:
+      path: UtaNote/Info.plist
+      properties:
+        CFBundleDisplayName: UtaNote
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIBackgroundModes: [audio]
+        NSMicrophoneUsageDescription: 跟读练习需要使用麦克风录制你的发音。
+        NSSpeechRecognitionUsageDescription: 识别你的跟读发音，用来生成改进建议。
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rare.utanote
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_PREVIEWS: YES
+  UtaNoteTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: UtaNoteTests
+    dependencies:
+      - target: UtaNote
+    info:
+      path: UtaNoteTests/Info.plist
+      properties: {}
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/UtaNote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/UtaNote
+        BUNDLE_LOADER: $(TEST_HOST)
+schemes:
+  UtaNote:
+    build:
+      targets:
+        UtaNote: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - UtaNoteTests
