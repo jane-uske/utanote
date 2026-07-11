@@ -1,8 +1,10 @@
 # UtaNote iOS
 
-用日语歌学日语的原生 iOS App（Swift + SwiftUI）。核心链路：
+从零基础课程进入、再用日语歌巩固的原生 iOS App（Swift + SwiftUI）。核心链路：
 
-选歌 → 沉浸听歌 → 点任意一句 → 假名/翻译/词汇/语法/情绪 → 听标准发音 → 跟读拿 AI 反馈 → 盖朱印收藏 → 间隔复习。
+今日课程 → 听懂/讲解/测验 → 真人录音反馈 → GPT Live 受控陪练 → 间隔复习 → 用歌曲迁移当天表达。
+
+当前内置“零基础第一月”完整课程包：4 周、24 节，从自我介绍、购物、作息逐步走到问路和 90 秒综合会话。歌曲链路继续保留：选歌 → 沉浸听歌 → 点任意一句 → 假名/翻译/词汇/语法/情绪 → 跟读 → 收藏复习。
 
 ## 跑起来
 
@@ -29,7 +31,7 @@ xcodebuild test -project UtaNote.xcodeproj -scheme UtaNote \
 
 ```bash
 xcrun simctl launch booted com.rare.utanote --uta-route player --uta-demo-data
-# 路由: home | library | review | notebook | player | study | practice | onboarding
+# 路由: home | course | lesson | library | review | notebook | player | study | practice | onboarding
 # --uta-demo-data 会幂等地播种少量演示用户数据
 ```
 
@@ -46,7 +48,8 @@ Sources/
   Services/       AudioPlayerController（AVAudioPlayer+时间轴+后台播放+锁屏控制）
                   SpeechService（ja-JP TTS）· RecordingController（录音+电平）
                   PronunciationEvaluator（SFSpeechRecognizer 识别→罗马字对齐打分，协议可换服务端 AI）
-  Features/       Home · Library · Player（夜舞台）· Study（单句学习）· Practice（跟读反馈）· Review · Notebook · Onboarding
+  Features/       Course（24课/测验/Live/课程复习）· Home · Library · Player（夜舞台）· Study（单句学习）
+                  Practice（跟读反馈）· Review · Notebook · Onboarding
 Resources/
   Songs/*.json    3 首原创演示歌内容包（schema: scripts/ios/SONG_SCHEMA.md）
   Audio/*.m4a     原创合成伴奏（scripts/ios/make_audio.py 按和弦谱确定性渲染）

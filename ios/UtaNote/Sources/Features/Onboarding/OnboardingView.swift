@@ -113,7 +113,7 @@ private struct FrontispiecePage: View {
                 .offset(y: appeared ? 0 : 8)
                 .animation(.easeOut(duration: 0.6).delay(0.15), value: appeared)
 
-            Text("用喜欢的歌，学会日语")
+            Text("从第一句开始，用喜欢的歌学会日语")
                 .font(.system(size: 15))
                 .foregroundStyle(UtaColor.inkSoft)
                 .kerning(1)
@@ -124,7 +124,7 @@ private struct FrontispiecePage: View {
 
             Spacer(minLength: 0)
 
-            Text("原创演示歌曲 · 无需登录")
+            Text("零基础课程 · 原创歌曲 · 无需登录")
                 .font(.system(size: 11))
                 .foregroundStyle(UtaColor.inkFaint)
                 .kerning(1)
@@ -154,13 +154,13 @@ private struct TapLinePage: View {
         Token(surface: "る", reading: nil),
     ]
 
-    private let facets = ["假名", "翻译", "词汇", "语法", "情绪"]
+    private let facets = ["听懂", "跟读", "开口", "复习"]
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
 
-            Text("点一句，读懂一句")
+            Text("每天学会说一件事")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(UtaColor.ink)
                 .opacity(appeared ? 1 : 0)
@@ -185,7 +185,7 @@ private struct TapLinePage: View {
             .offset(y: appeared ? 0 : 8)
             .animation(.easeOut(duration: 0.6).delay(0.3), value: appeared)
 
-            Text("每一句歌词，都是一堂两分钟的小课")
+            Text("课程负责进阶，歌曲负责让日语留下来")
                 .font(.system(size: 13))
                 .foregroundStyle(UtaColor.inkSoft)
                 .padding(.top, 28)
@@ -209,7 +209,7 @@ private struct PracticePage: View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
 
-            Text("跟读与收藏")
+            Text("真的开口，也真的记住")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(UtaColor.ink)
                 .opacity(appeared ? 1 : 0)
@@ -217,15 +217,15 @@ private struct PracticePage: View {
                 .animation(.easeOut(duration: 0.6), value: appeared)
 
             VStack(alignment: .leading, spacing: 26) {
-                featureRow(text: "跟读，听 AI 给你反馈", delay: 0.15) {
+                featureRow(text: "24 节零基础课，从自介到真实任务", delay: 0.15) {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 19))
                         .foregroundStyle(UtaColor.indigo)
                 }
-                featureRow(text: "长按收藏，盖上你的印章", delay: 0.28) {
+                featureRow(text: "跟读录音，获得清楚的发音反馈", delay: 0.28) {
                     SealStamp(size: 20)
                 }
-                featureRow(text: "到期复习，别让喜欢的句子溜走", delay: 0.41) {
+                featureRow(text: "到期复习，别让会说的句子溜走", delay: 0.41) {
                     Image(systemName: "clock.arrow.circlepath")
                         .font(.system(size: 19))
                         .foregroundStyle(UtaColor.indigo)

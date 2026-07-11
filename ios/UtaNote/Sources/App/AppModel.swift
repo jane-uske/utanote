@@ -29,6 +29,8 @@ final class AppModel {
     var pendingStudyLineID: String?
     /// 学习页出现后直接进入跟读（用于截图路由/深链）
     var pendingPracticeImmediately = false
+    /// 课程深链/通知直达的单课
+    var presentedCourseLesson: CourseLesson?
 
     init() {
         songs = SongLibrary.loadBundled()

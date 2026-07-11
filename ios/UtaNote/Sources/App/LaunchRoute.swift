@@ -3,7 +3,7 @@ import Foundation
 /// 启动参数路由，用于自动化截图与调试直达指定页面。
 /// 例：xcrun simctl launch booted com.rare.utanote --uta-route player --uta-demo-data
 enum LaunchRoute: String {
-    case home, library, review, notebook, player, study, practice, onboarding
+    case home, course, lesson, library, review, notebook, player, study, practice, onboarding
 
     static var current: LaunchRoute? {
         guard let i = CommandLine.arguments.firstIndex(of: "--uta-route"),

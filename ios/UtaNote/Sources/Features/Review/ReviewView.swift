@@ -6,9 +6,11 @@ struct ReviewView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.modelContext) private var context
     @Query(sort: \ReviewCard.dueAt) private var cards: [ReviewCard]
+    @Query(sort: \CourseReviewCard.dueAt) private var courseCards: [CourseReviewCard]
 
     /// 非 nil 时进入复习会话（覆盖式切换，避免与播放器全屏弹层冲突）
     @State private var sessionItems: [ReviewItem]?
+    @State private var showsCourseReview = false
 
     var body: some View {
         let now = Date.now
@@ -27,6 +29,9 @@ struct ReviewView: View {
             }
         }
         .toolbar(sessionItems == nil ? Visibility.automatic : .hidden, for: .tabBar)
+        .sheet(isPresented: $showsCourseReview) {
+            NavigationStack { CourseReviewView() }
+        }
     }
 
     // MARK: - 总览
@@ -35,6 +40,9 @@ struct ReviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 26) {
                 header
+                if courseDueCount > 0 {
+                    courseReviewSummary
+                }
                 if items.isEmpty {
                     emptyState
                 } else if due.isEmpty {
@@ -46,6 +54,42 @@ struct ReviewView: View {
             }
             .padding(.horizontal, 20)
         }
+    }
+
+    private var courseDueCount: Int {
+        courseCards.filter { $0.dueAt <= .now }.count
+    }
+
+    private var courseReviewSummary: some View {
+        Button {
+            showsCourseReview = true
+        } label: {
+            UtaCard(padding: 15) {
+                HStack(spacing: 13) {
+                    ZStack {
+                        Circle()
+                            .fill(UtaColor.indigo.opacity(0.12))
+                            .frame(width: 46, height: 46)
+                        Text("習")
+                            .font(.lyric(20, heavy: true))
+                            .foregroundStyle(UtaColor.indigo)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("课程表达 · \(courseDueCount) 项到期")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(UtaColor.ink)
+                        Text("看中文说日语，找回正在遗忘的句子")
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(UtaColor.inkSoft)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(UtaColor.inkFaint)
+                }
+            }
+        }
+        .buttonStyle(PressableStyle(scale: 0.98))
     }
 
     private var header: some View {

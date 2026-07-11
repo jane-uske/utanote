@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// 跟读练习：听 → 录 → 回放 → 结构化 AI 反馈。

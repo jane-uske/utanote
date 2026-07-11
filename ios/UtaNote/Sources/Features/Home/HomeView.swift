@@ -9,27 +9,37 @@ struct HomeView: View {
     @Query private var savedLines: [SavedLine]
     @Query private var reviewCards: [ReviewCard]
     @Query private var practices: [PracticeRecord]
+    @Query private var courseProgress: [CourseLessonProgress]
+    @Query private var courseReviewCards: [CourseReviewCard]
+    @State private var showsCourseRoute = LaunchRoute.current == .course
 
     var body: some View {
-        ZStack {
-            PaperBackground()
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 26) {
-                    header
-                    if let target = resumeTarget {
-                        continueCard(target.song, lineID: target.lineID)
+        NavigationStack {
+            ZStack {
+                PaperBackground()
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 26) {
+                        header
+                        courseHero
+                        if let target = resumeTarget {
+                            continueCard(target.song, lineID: target.lineID)
+                        }
+                        todayStrip
+                        if dueCount > 0 {
+                            reviewNudge
+                        }
+                        songsSection
+                        if let daily = dailyLine {
+                            dailyLineCard(daily.0, daily.1)
+                        }
+                        Color.clear.frame(height: 16)
                     }
-                    todayStrip
-                    if dueCount > 0 {
-                        reviewNudge
-                    }
-                    songsSection
-                    if let daily = dailyLine {
-                        dailyLineCard(daily.0, daily.1)
-                    }
-                    Color.clear.frame(height: 16)
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(isPresented: $showsCourseRoute) {
+                CourseDashboardView()
             }
         }
     }
@@ -45,11 +55,84 @@ struct HomeView: View {
             Text(greeting)
                 .font(.lyric(30, heavy: true))
                 .foregroundStyle(UtaColor.ink)
-            Text("今天也来听一句喜欢的歌吧。")
+            Text("今天学会一句，再去喜欢的歌里遇见它。")
                 .font(.system(size: 13.5))
                 .foregroundStyle(UtaColor.inkSoft)
         }
         .padding(.top, 16)
+    }
+
+    // MARK: - 今日课程
+
+    private var completedCourseIDs: Set<String> {
+        Set(courseProgress.filter { $0.completedAt != nil }.map(\.lessonID))
+    }
+
+    private var nextCourseLesson: CourseLesson? {
+        CourseCatalog.lessons.first { !completedCourseIDs.contains($0.id) }
+    }
+
+    private var courseDueCount: Int {
+        courseReviewCards.filter { $0.dueAt <= .now }.count
+    }
+
+    private var courseHero: some View {
+        NavigationLink {
+            CourseDashboardView()
+        } label: {
+            UtaCard(padding: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ZStack(alignment: .bottomLeading) {
+                        LinearGradient(
+                            colors: [UtaColor.indigo.darkened(0.12), UtaColor.indigo],
+                            startPoint: .topLeading, endPoint: .bottomTrailing)
+                        Circle()
+                            .fill(.white.opacity(0.08))
+                            .frame(width: 150, height: 150)
+                            .offset(x: 240, y: -38)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(nextCourseLesson?.kicker ?? "最初の一か月")
+                                .font(.lyric(11))
+                                .foregroundStyle(.white.opacity(0.65))
+                                .kerning(2)
+                            Text(nextCourseLesson?.title ?? "首月课程已完成")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundStyle(.white)
+                            Text(nextCourseLesson?.promise ?? "你已经完成了从零开始的 24 课。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white.opacity(0.78))
+                                .lineLimit(2)
+                            HStack(spacing: 7) {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 10))
+                                Text(nextCourseLesson == nil ? "查看课程记录" : "开始今天的 \(nextCourseLesson!.durationMinutes) 分钟")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 13)
+                            .frame(height: 34)
+                            .background(Capsule().fill(.white.opacity(0.16)))
+                        }
+                        .padding(20)
+                    }
+                    .frame(height: 210)
+                    HStack {
+                        Label("已完成 \(completedCourseIDs.count)/24", systemImage: "checkmark.circle")
+                        Spacer()
+                        if courseDueCount > 0 {
+                            Label("\(courseDueCount) 项待复习", systemImage: "clock")
+                        } else {
+                            Text("零基础 · 一年挑战 N2")
+                        }
+                    }
+                    .font(.system(size: 11.5, weight: .medium))
+                    .foregroundStyle(UtaColor.inkSoft)
+                    .padding(.horizontal, 16)
+                    .frame(height: 44)
+                }
+            }
+        }
+        .buttonStyle(PressableStyle(scale: 0.985))
     }
 
     private var greeting: String {
@@ -116,6 +199,12 @@ struct HomeView: View {
     private var practiceTodayCount: Int {
         practices.filter { Calendar.current.isDateInToday($0.createdAt) }.count
     }
+    private var courseTodayCount: Int {
+        courseProgress.filter {
+            guard let date = $0.completedAt else { return false }
+            return Calendar.current.isDateInToday(date)
+        }.count
+    }
     private var dueCount: Int {
         let now = Date.now
         return reviewCards.filter { $0.dueAt <= now }.count
@@ -124,7 +213,7 @@ struct HomeView: View {
     private var todayStrip: some View {
         UtaCard(padding: 0) {
             HStack(spacing: 0) {
-                statColumn(value: savedTodayCount, unit: "句", label: "今日收藏")
+                statColumn(value: courseTodayCount, unit: "课", label: "今日课程")
                 Rectangle().fill(UtaColor.hairline).frame(width: 0.6, height: 40)
                 statColumn(value: practiceTodayCount, unit: "次", label: "今日跟读")
                 Rectangle().fill(UtaColor.hairline).frame(width: 0.6, height: 40)

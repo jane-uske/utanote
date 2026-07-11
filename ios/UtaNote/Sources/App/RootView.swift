@@ -32,6 +32,13 @@ struct RootView: View {
         .fullScreenCover(item: $app.presentedImportedSong) { song in
             ImportedPlayerView(song: song)
         }
+        .fullScreenCover(item: $app.presentedCourseLesson) { lesson in
+            // 深链路径也要注册课程目的地，否则完成页的「查看下一课」推不动
+            NavigationStack {
+                CourseLessonView(lesson: lesson)
+                    .navigationDestination(for: CourseLesson.self) { CourseLessonView(lesson: $0) }
+            }
+        }
         .fullScreenCover(isPresented: showsOnboarding) {
             OnboardingView()
         }
@@ -79,6 +86,9 @@ struct RootView: View {
         guard let song = app.songs.first else { return }
         switch route {
         case .home: app.tab = .home
+        case .course: app.tab = .home
+        case .lesson:
+            app.presentedCourseLesson = CourseCatalog.lessons.first
         case .library: app.tab = .library
         case .review: app.tab = .review
         case .notebook: app.tab = .notebook
@@ -98,20 +108,27 @@ struct RootView: View {
 
     private func seedDemoData() {
         guard let song = app.songs.first else { return }
-        guard UserDataStore.savedLine(songID: song.id, lineID: song.lines[0].id, in: context) == nil else { return }
-        for (index, line) in song.lines.prefix(4).enumerated() {
-            context.insert(
-                SavedLine(songID: song.id, lineID: line.id, note: index == 0 ? "整首歌最喜欢的一句。" : ""))
-            UserDataStore.ensureReviewCard(songID: song.id, lineID: line.id, source: .saved, in: context)
-        }
-        if app.songs.count > 1 {
-            let second = app.songs[1]
-            for line in second.lines.prefix(2) {
-                context.insert(SavedLine(songID: second.id, lineID: line.id))
-                UserDataStore.ensureReviewCard(songID: second.id, lineID: line.id, source: .saved, in: context)
+        if UserDataStore.savedLine(songID: song.id, lineID: song.lines[0].id, in: context) == nil {
+            for (index, line) in song.lines.prefix(4).enumerated() {
+                context.insert(
+                    SavedLine(songID: song.id, lineID: line.id, note: index == 0 ? "整首歌最喜欢的一句。" : ""))
+                UserDataStore.ensureReviewCard(songID: song.id, lineID: line.id, source: .saved, in: context)
             }
+            if app.songs.count > 1 {
+                let second = app.songs[1]
+                for line in second.lines.prefix(2) {
+                    context.insert(SavedLine(songID: second.id, lineID: line.id))
+                    UserDataStore.ensureReviewCard(songID: second.id, lineID: line.id, source: .saved, in: context)
+                }
+            }
+            context.insert(PracticeRecord(songID: song.id, lineID: song.lines[1].id, score: 82, transcript: nil))
+            UserDataStore.markStudied(song: song, line: song.lines[2], in: context)
         }
-        context.insert(PracticeRecord(songID: song.id, lineID: song.lines[1].id, score: 82, transcript: nil))
-        UserDataStore.markStudied(song: song, line: song.lines[2], in: context)
+        if CourseStore.profile(in: context) == nil {
+            context.insert(CourseProfile(dailyMinutes: 60, interests: ["音乐", "旅行"]))
+        }
+        for lesson in CourseCatalog.lessons.prefix(2) {
+            CourseStore.complete(lesson, quizPassed: true, liveCompleted: lesson.sequence == 1, in: context)
+        }
     }
 }
