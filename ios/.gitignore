@@ -1,4 +1,5 @@
 build/
+build-course/
 DerivedData/
 *.xcodeproj
 !project.yml

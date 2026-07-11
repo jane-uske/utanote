@@ -23,17 +23,19 @@ targets:
       - path: UtaNote/Resources/Audio
         type: folder
         buildPhase: resources
+      - path: UtaNote/Resources/PrivacyInfo.xcprivacy
+        buildPhase: resources
     info:
       path: UtaNote/Info.plist
       properties:
         CFBundleDisplayName: UtaNote
-        CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.1.0"
+        CFBundleVersion: "2"
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIBackgroundModes: [audio]
-        NSMicrophoneUsageDescription: 跟读练习需要使用麦克风录制你的发音。
-        NSSpeechRecognitionUsageDescription: 识别你的跟读发音，用来生成改进建议。
+        NSMicrophoneUsageDescription: 课程和歌曲跟读需要使用麦克风录制你的发音；原始录音只在本次练习中使用。
+        NSSpeechRecognitionUsageDescription: 将你的日语跟读转换为文字，用于生成发音反馈和学习记录。
         NSAppleMusicUsageDescription: 播放你在 Apple Music 订阅中的歌曲，用来逐句学习歌词。
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
