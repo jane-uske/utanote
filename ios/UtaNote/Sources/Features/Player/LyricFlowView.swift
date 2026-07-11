@@ -6,16 +6,21 @@ import SwiftUI
 struct LyricFlowView: View {
     let song: Song
     let showTranslations: Bool
+    /// 当前高亮行，由持有者的播放控制器驱动（本地音频或 Apple Music）
+    let currentLineIndex: Int?
     @Binding var studyLine: LyricLine?
     @Binding var stampedLineID: String?
 
-    @Environment(AppModel.self) private var app
     @Environment(\.modelContext) private var context
     @Query private var saved: [SavedLine]
 
-    init(song: Song, showTranslations: Bool, studyLine: Binding<LyricLine?>, stampedLineID: Binding<String?>) {
+    init(
+        song: Song, showTranslations: Bool, currentLineIndex: Int?,
+        studyLine: Binding<LyricLine?>, stampedLineID: Binding<String?>
+    ) {
         self.song = song
         self.showTranslations = showTranslations
+        self.currentLineIndex = currentLineIndex
         _studyLine = studyLine
         _stampedLineID = stampedLineID
         let songID = song.id
@@ -42,14 +47,14 @@ struct LyricFlowView: View {
                 }
                 .padding(.horizontal, 28)
             }
-            .onChange(of: app.audio.currentLineIndex) { _, newIndex in
+            .onChange(of: currentLineIndex) { _, newIndex in
                 guard let newIndex, song.lines.indices.contains(newIndex) else { return }
                 withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
                     proxy.scrollTo(song.lines[newIndex].id, anchor: .center)
                 }
             }
             .onAppear {
-                if let index = app.audio.currentLineIndex, song.lines.indices.contains(index) {
+                if let index = currentLineIndex, song.lines.indices.contains(index) {
                     proxy.scrollTo(song.lines[index].id, anchor: .center)
                 }
             }
@@ -61,7 +66,7 @@ struct LyricFlowView: View {
     }
 
     private func state(for index: Int) -> LyricLineRow.LineState {
-        guard let current = app.audio.currentLineIndex else { return .far }
+        guard let current = currentLineIndex else { return .far }
         if index == current { return .current }
         return abs(index - current) == 1 ? .near : .far
     }

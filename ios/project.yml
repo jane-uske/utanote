@@ -9,7 +9,7 @@ settings:
     SWIFT_VERSION: "5.0"
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     CODE_SIGN_STYLE: Automatic
-    DEVELOPMENT_TEAM: T3NXW85FQQ
+    DEVELOPMENT_TEAM: WWP5X5N4TB
 targets:
   UtaNote:
     type: application
@@ -34,6 +34,7 @@ targets:
         UIBackgroundModes: [audio]
         NSMicrophoneUsageDescription: 跟读练习需要使用麦克风录制你的发音。
         NSSpeechRecognitionUsageDescription: 识别你的跟读发音，用来生成改进建议。
+        NSAppleMusicUsageDescription: 播放你在 Apple Music 订阅中的歌曲，用来逐句学习歌词。
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
     settings:

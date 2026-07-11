@@ -1,4 +1,18 @@
+import SafariServices
 import SwiftUI
+
+// MARK: - 应用内浏览器
+
+/// 应用内 Safari（查歌词等场景），用户浏览与复制都发生在系统浏览器沙箱里。
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+
+    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
+}
 
 // MARK: - 背景
 

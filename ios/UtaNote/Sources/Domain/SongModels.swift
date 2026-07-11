@@ -16,6 +16,8 @@ struct Song: Codable, Identifiable, Hashable {
     let coverStyle: CoverStyle
     let durationSec: Double
     let lines: [LyricLine]
+    /// Apple Music 导入歌的真封面；bundle 歌为 nil（走生成式封面）
+    var artworkURL: String? = nil
 
     var accentColor: Color { Color(hex: coverStyle.accentHex) }
 

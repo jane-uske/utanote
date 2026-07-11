@@ -19,6 +19,7 @@ struct PlayerView: View {
                 LyricFlowView(
                     song: song,
                     showTranslations: showTranslations,
+                    currentLineIndex: app.audio.currentLineIndex,
                     studyLine: $studyLine,
                     stampedLineID: $stampedLineID)
                 controls
@@ -175,7 +176,7 @@ struct PlayerView: View {
 
 // MARK: - 小件
 
-private struct ControlIcon: View {
+struct ControlIcon: View {
     let name: String
     var size: CGFloat = 18
     let action: () -> Void
@@ -221,7 +222,7 @@ private struct RateMenu: View {
     }
 }
 
-private struct ProgressStrip: View {
+struct ProgressStrip: View {
     let duration: Double
     let current: Double
     let accent: Color

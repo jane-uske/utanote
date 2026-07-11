@@ -29,10 +29,16 @@ struct RootView: View {
                 PlayerView(song: song)
             }
         }
+        .fullScreenCover(item: $app.presentedImportedSong) { song in
+            ImportedPlayerView(song: song)
+        }
         .fullScreenCover(isPresented: showsOnboarding) {
             OnboardingView()
         }
-        .task { applyLaunchRoute() }
+        .task {
+            app.reloadImportedSongs(in: context)
+            applyLaunchRoute()
+        }
     }
 
     @ViewBuilder
