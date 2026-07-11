@@ -19,6 +19,8 @@ enum AppleMusicService {
         let artistName: String
         let artworkUrl100: String?
         let trackTimeMillis: Int?
+        /// 30 秒试听片段（苹果公开 CDN，无需订阅），部分曲目可能没有
+        let previewUrl: String?
 
         var id: Int { trackId }
         var storeID: String { String(trackId) }

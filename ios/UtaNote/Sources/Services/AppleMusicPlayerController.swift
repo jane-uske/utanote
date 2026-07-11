@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import MediaPlayer
 import Observation
@@ -5,15 +6,22 @@ import Observation
 /// Apple Music 播放：系统媒体播放器按 store id 播全曲 + 歌词时间轴。
 /// 用 MPMusicPlayerController 而非 MusicKit 的 ApplicationMusicPlayer——
 /// 前者不需要付费开发者资格（developer token），只要用户自己的订阅。
-/// 锁屏控制与后台播放由系统音乐播放栈接管。
+/// 无订阅时降级为 AVPlayer 流播 30 秒试听片段（苹果公开 CDN）。
 @MainActor
 @Observable
 final class AppleMusicPlayerController {
+    enum Source {
+        case fullTrack(storeID: String)
+        case preview(URL)
+    }
+
     private(set) var song: Song?
     private(set) var isPlaying = false
     private(set) var currentTime: Double = 0
     private(set) var currentLineIndex: Int?
     private(set) var lastError: String?
+    /// 当前走的是 30 秒试听片段（UI 据此标注）
+    private(set) var isPreview = false
 
     /// 单句循环的行 id
     var loopingLineID: String? {
@@ -21,38 +29,66 @@ final class AppleMusicPlayerController {
     }
 
     private let player = MPMusicPlayerController.applicationQueuePlayer
+    private var previewPlayer: AVPlayer?
     private var ticker: Timer?
     private var loopRange: ClosedRange<Double>?
     private var itemDuration: Double = 0
 
-    var duration: Double { song?.durationSec ?? itemDuration }
+    var duration: Double {
+        if isPreview {
+            // 试听片段实际时长（一般 30s），时间轴/进度条按片段算
+            let itemSeconds = previewPlayer?.currentItem?.duration.seconds ?? .nan
+            return itemSeconds.isFinite && itemSeconds > 0 ? itemSeconds : 30
+        }
+        return song?.durationSec ?? itemDuration
+    }
 
-    /// 按 Apple Music store id 装入一首真歌。song 为 nil 时只播不同步（打点工作台阶段）。
-    func load(storeID: String, song: Song?, itemDuration: Double = 0) {
+    /// 装入一首真歌。song 为 nil 时只播不同步（打点工作台阶段）。
+    func load(source: Source, song: Song?, itemDuration: Double = 0) {
         stopTicker()
+        player.stop()
+        previewPlayer?.pause()
+        previewPlayer = nil
         self.song = song
         self.itemDuration = song?.durationSec ?? itemDuration
         currentTime = 0
         currentLineIndex = nil
         loopingLineID = nil
         lastError = nil
-        player.setQueue(with: [storeID])
-        player.prepareToPlay { [weak self] error in
-            Task { @MainActor [weak self] in
-                if error != nil {
-                    self?.lastError = "这首歌暂时无法播放，检查 Apple Music 订阅或网络。"
+        switch source {
+        case .fullTrack(let storeID):
+            isPreview = false
+            player.setQueue(with: [storeID])
+            player.prepareToPlay { [weak self] error in
+                Task { @MainActor [weak self] in
+                    if error != nil {
+                        self?.lastError = "这首歌暂时无法播放，检查 Apple Music 订阅或网络。"
+                    }
                 }
             }
+        case .preview(let url):
+            isPreview = true
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            previewPlayer = AVPlayer(playerItem: AVPlayerItem(url: url))
         }
     }
 
     func play() {
-        player.play()
+        if isPreview {
+            try? AVAudioSession.sharedInstance().setActive(true)
+            previewPlayer?.play()
+        } else {
+            player.play()
+        }
         startTicker()
     }
 
     func pause() {
-        player.pause()
+        if isPreview {
+            previewPlayer?.pause()
+        } else {
+            player.pause()
+        }
         stopTicker()
         refreshPlaybackState()
         tickTime()
@@ -64,13 +100,20 @@ final class AppleMusicPlayerController {
 
     func seek(to time: Double) {
         let clamped = max(0, min(time, max(0, duration - 0.1)))
-        player.currentPlaybackTime = clamped
+        if isPreview {
+            previewPlayer?.seek(
+                to: CMTime(seconds: clamped, preferredTimescale: 600),
+                toleranceBefore: .zero, toleranceAfter: .zero)
+        } else {
+            player.currentPlaybackTime = clamped
+        }
         // 与本地播放器同语义：拖出循环句时迁移/解除单句循环
         if let loopRange, !loopRange.contains(clamped), let song {
             loopingLineID = LyricTimeline.index(at: clamped, lines: song.lines)
                 .map { song.lines[$0].id }
         }
-        tickTime()
+        currentTime = clamped
+        refreshLineIndex()
     }
 
     func seek(toLine index: Int) {
@@ -99,11 +142,14 @@ final class AppleMusicPlayerController {
     /// 退出真歌播放器时停止播放
     func stop() {
         player.stop()
+        previewPlayer?.pause()
+        previewPlayer = nil
         stopTicker()
         song = nil
         currentLineIndex = nil
         loopingLineID = nil
         isPlaying = false
+        isPreview = false
     }
 
     // MARK: - 时间轴
@@ -126,19 +172,29 @@ final class AppleMusicPlayerController {
         refreshPlaybackState()
         tickTime()
         if let loopRange, currentTime >= loopRange.upperBound - 0.03 {
-            player.currentPlaybackTime = loopRange.lowerBound
+            if isPreview {
+                previewPlayer?.seek(
+                    to: CMTime(seconds: loopRange.lowerBound, preferredTimescale: 600),
+                    toleranceBefore: .zero, toleranceAfter: .zero)
+            } else {
+                player.currentPlaybackTime = loopRange.lowerBound
+            }
             currentTime = loopRange.lowerBound
             refreshLineIndex()
         }
     }
 
     private func tickTime() {
-        currentTime = player.currentPlaybackTime
+        currentTime = isPreview
+            ? (previewPlayer?.currentTime().seconds ?? 0)
+            : player.currentPlaybackTime
         refreshLineIndex()
     }
 
     private func refreshPlaybackState() {
-        isPlaying = player.playbackState == .playing
+        isPlaying = isPreview
+            ? previewPlayer?.timeControlStatus == .playing
+            : player.playbackState == .playing
         // prepareToPlay 对 store id 队列常先报错随后照常播——播起来了就清掉误报
         if isPlaying, lastError != nil { lastError = nil }
     }

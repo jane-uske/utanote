@@ -10,19 +10,21 @@ final class ImportedSongRecord {
     var title: String
     var artist: String
     var artworkURL: String?
+    var previewURL: String?
     var durationSec: Double
     var linesJSON: Data
     var createdAt: Date
 
     init(
         catalogID: String, title: String, artist: String,
-        artworkURL: String?, durationSec: Double, lines: [LyricLine]
+        artworkURL: String?, previewURL: String?, durationSec: Double, lines: [LyricLine]
     ) {
         self.id = "am-\(catalogID)"
         self.catalogID = catalogID
         self.title = title
         self.artist = artist
         self.artworkURL = artworkURL
+        self.previewURL = previewURL
         self.durationSec = durationSec
         self.linesJSON = (try? JSONEncoder().encode(lines)) ?? Data()
         self.createdAt = .now
@@ -51,6 +53,7 @@ final class ImportedSongRecord {
                 accentHex: "#8A9BC4"),
             durationSec: durationSec,
             lines: lines,
-            artworkURL: artworkURL)
+            artworkURL: artworkURL,
+            previewURL: previewURL)
     }
 }

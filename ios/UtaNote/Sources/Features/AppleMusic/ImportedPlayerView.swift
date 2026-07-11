@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// Apple Music 导入歌的夜舞台：真封面浸染背景，歌词流/循环/学习/收藏与本地播放器同体验。
@@ -97,8 +98,11 @@ struct ImportedPlayerView: View {
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                Chip(text: "Apple Music", color: .white.opacity(0.38))
-                    .padding(.trailing, 6)
+                Chip(
+                    text: app.musicPlayer.isPreview ? "30 秒试听" : "Apple Music",
+                    color: .white.opacity(0.38)
+                )
+                .padding(.trailing, 6)
             }
         }
         .padding(.horizontal, 12)

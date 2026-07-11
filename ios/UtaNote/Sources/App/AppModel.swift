@@ -17,6 +17,8 @@ final class AppModel {
 
     var tab: AppTab = .home
     var isPlayerPresented = false
+    /// Apple Music 可用性（搜索页/播放器共享的缓存，.ready 表示可播全曲）
+    var musicAvailability: AppleMusicService.Availability = .notDetermined
     /// Apple Music 搜索/打点流程的全屏展示
     var isMusicSearchPresented = false
     /// 正在全屏展示的 Apple Music 导入歌
@@ -48,13 +50,25 @@ final class AppModel {
         importedSongs = ((try? context.fetch(descriptor)) ?? []).map { $0.toSong() }
     }
 
-    /// 打开 Apple Music 导入歌的播放器（store id 直接入队，无需目录请求）
+    /// 打开 Apple Music 导入歌的播放器：有订阅播全曲，无订阅降级 30 秒试听
     func openImportedSong(_ song: Song, autoplay: Bool = true) {
         audio.pause()
         presentedImportedSong = song
         let storeID = String(song.id.dropFirst("am-".count))
-        musicPlayer.load(storeID: storeID, song: song)
-        if autoplay { musicPlayer.play() }
+        Task { [musicPlayer] in
+            if musicAvailability == .notDetermined {
+                musicAvailability = await AppleMusicService.availability()
+            }
+            if musicAvailability == .ready {
+                musicPlayer.load(source: .fullTrack(storeID: storeID), song: song)
+            } else if let preview = song.previewURL.flatMap(URL.init(string:)) {
+                musicPlayer.load(source: .preview(preview), song: song)
+            } else {
+                musicPlayer.load(source: .fullTrack(storeID: storeID), song: song)
+                musicPlayer.presentLoadFailure("无 Apple Music 订阅，且这首歌没有试听片段。")
+            }
+            if autoplay { musicPlayer.play() }
+        }
     }
 
     func openPlayer(_ song: Song, atLineID lineID: String? = nil, autoplay: Bool = true) {

@@ -98,8 +98,13 @@ struct LyricTimingView: View {
                 lines = parsed
                 events = []
                 isTiming = true
-                app.musicPlayer.load(
-                    storeID: track.storeID, song: nil, itemDuration: track.duration ?? 0)
+                if app.musicAvailability == .ready {
+                    app.musicPlayer.load(
+                        source: .fullTrack(storeID: track.storeID),
+                        song: nil, itemDuration: track.duration ?? 0)
+                } else if let urlString = track.previewUrl, let url = URL(string: urlString) {
+                    app.musicPlayer.load(source: .preview(url), song: nil)
+                }
                 app.musicPlayer.play()
             }
             .frame(maxWidth: .infinity)
@@ -160,6 +165,13 @@ struct LyricTimingView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
+
+            if player.isPreview {
+                Text("30 秒试听模式：打到片段结束为止，之后可随时重新打点")
+                    .font(.system(size: 11))
+                    .foregroundStyle(UtaColor.inkFaint)
+                    .padding(.bottom, 4)
+            }
 
             lineList(starts: starts)
 
@@ -232,15 +244,28 @@ struct LyricTimingView: View {
                 .buttonStyle(PressableStyle(scale: 0.97))
                 .disabled(!canMark)
             }
-            Button {
-                events.append(.interlude(player.currentTime))
-                Haptics.selection()
-            } label: {
-                Text("间奏 · 上一句到此结束")
-                    .font(.system(size: 12.5, weight: .medium))
-                    .foregroundStyle(canInterlude ? UtaColor.indigo : UtaColor.inkFaint)
+            HStack(spacing: 18) {
+                Button {
+                    events.append(.interlude(player.currentTime))
+                    Haptics.selection()
+                } label: {
+                    Text("间奏 · 上一句到此结束")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(canInterlude ? UtaColor.indigo : UtaColor.inkFaint)
+                }
+                .disabled(!canInterlude)
+                // 试听只有 30 秒/只想学副歌时，打几句存几句
+                if !allMarked, !starts.isEmpty {
+                    Button {
+                        save()
+                    } label: {
+                        Text("只保存前 \(starts.count) 句")
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundStyle(UtaColor.inkSoft)
+                    }
+                    .disabled(isSaving)
+                }
             }
-            .disabled(!canInterlude)
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 12)
@@ -277,11 +302,13 @@ struct LyricTimingView: View {
         let starts = markedStarts
         let ends = interludeEnds()
         let player = app.musicPlayer
-        let total = player.duration > 0 ? player.duration : (starts.last ?? 0) + 8
+        // durationSec 存全曲时长——试听打点后订阅播全曲时进度条才正确
+        let total = track.duration ?? (player.duration > 0 ? player.duration : (starts.last ?? 0) + 8)
         var lyricLines: [LyricLine] = []
-        for (index, text) in lines.enumerated() {
+        // 部分保存：只取已打点的行
+        for (index, text) in lines.prefix(starts.count).enumerated() {
             let start = starts[index]
-            let nextStart = index + 1 < starts.count ? starts[index + 1] : total
+            let nextStart = index + 1 < starts.count ? starts[index + 1] : min(start + 8, total)
             let end = min(ends[index] ?? nextStart, total)
             lyricLines.append(
                 LyricLine(
@@ -308,6 +335,7 @@ struct LyricTimingView: View {
             title: track.trackName,
             artist: track.artistName,
             artworkURL: track.artworkURL,
+            previewURL: track.previewUrl,
             durationSec: total,
             lines: lyricLines)
         context.insert(record)

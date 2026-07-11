@@ -1,28 +1,26 @@
+import AVFoundation
 import SwiftUI
 
 /// 从 Apple Music 搜真歌 → 选一首进入歌词打点工作台。
+/// 无订阅时不挡路：降级为 30 秒试听模式，全链路照走。
 struct MusicSearchView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
 
-    @State private var availability: AppleMusicService.Availability = .notDetermined
     @State private var query = ""
     @State private var results: [AppleMusicService.FoundTrack] = []
     @State private var isSearching = false
     @State private var searchError: String?
+    @State private var previewingID: Int?
+    @State private var previewPlayer: AVPlayer?
 
     var body: some View {
         NavigationStack {
             ZStack {
                 PaperBackground()
-                switch availability {
-                case .ready:
+                switch app.musicAvailability {
+                case .ready, .noSubscription:
                     searchContent
-                case .noSubscription:
-                    message(
-                        icon: "music.note.tv",
-                        title: "需要 Apple Music 订阅",
-                        body: "登录手机「音乐」App 的账号需要有效的 Apple Music 订阅，才能播放完整歌曲。")
                 case .denied:
                     message(
                         icon: "hand.raised",
@@ -43,7 +41,8 @@ struct MusicSearchView: View {
                 LyricTimingView(track: track)
             }
         }
-        .task { availability = await AppleMusicService.availability() }
+        .task { app.musicAvailability = await AppleMusicService.availability() }
+        .onDisappear { stopPreview() }
     }
 
     // MARK: - 搜索
@@ -51,6 +50,19 @@ struct MusicSearchView: View {
     private var searchContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 16) {
+                if app.musicAvailability == .noSubscription {
+                    UtaCard(padding: 12) {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 13))
+                                .foregroundStyle(UtaColor.indigo)
+                            Text("当前账号没有 Apple Music 订阅——将使用 30 秒试听片段，打点和学习照常可用。")
+                                .font(.system(size: 12))
+                                .foregroundStyle(UtaColor.inkSoft)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
                 searchField
                 if let searchError {
                     Text(searchError)
@@ -127,10 +139,45 @@ struct MusicSearchView: View {
                             .font(.timecode)
                             .foregroundStyle(UtaColor.inkFaint)
                     }
+                    if track.previewUrl != nil {
+                        Button {
+                            togglePreview(track)
+                        } label: {
+                            Image(systemName: previewingID == track.id
+                                ? "stop.circle.fill" : "play.circle")
+                                .font(.system(size: 22))
+                                .foregroundStyle(UtaColor.indigo)
+                                .frame(width: 34, height: 34)
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
         }
         .buttonStyle(PressableStyle(scale: 0.98))
+    }
+
+    // MARK: - 30 秒试听
+
+    private func togglePreview(_ track: AppleMusicService.FoundTrack) {
+        if previewingID == track.id {
+            stopPreview()
+            return
+        }
+        guard let urlString = track.previewUrl, let url = URL(string: urlString) else { return }
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        previewPlayer = AVPlayer(url: url)
+        previewPlayer?.play()
+        previewingID = track.id
+        Haptics.tap()
+    }
+
+    private func stopPreview() {
+        previewPlayer?.pause()
+        previewPlayer = nil
+        previewingID = nil
     }
 
     private var hint: some View {
