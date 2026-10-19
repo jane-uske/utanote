@@ -25,3 +25,4 @@ ios/UtaNote.xcodeproj/
 # film：本地署名配置、渲染输出
 film/credit.local.json
 film/out/
+film/**/__pycache__/
